@@ -88,7 +88,7 @@ def spiralCoilDimensionCalc(N,length,width,spacing,thickness,angle):
 
     return x_points_out,y_points_out,z_points_out
 
-
+# Test
 if __name__ == '__main__':
     l=70e-3 
     w=0.5e-3 
