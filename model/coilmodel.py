@@ -41,3 +41,8 @@ def spiralCoilFieldCalcMatrix(I, xPoints, yPoints, zPoints, px, py, pz):
     Hz = np.sum(Hz_dum,0)
 
     return np.array([[Hx],[Hy],[Hz]])
+
+
+    if __name__ == '__main__':
+        spiralCoilFieldCalcMatrix(1,xPoints,yPoints,zPoints,px,py,pz)
+        
