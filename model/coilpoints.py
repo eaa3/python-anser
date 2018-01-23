@@ -12,13 +12,13 @@ def spiralCoilDimensionCalc(N,length,width,spacing,thickness,angle):
 
     ll_s = w + s # line to line spacing
 
-    Points_total=(4 * N) + 1
+    Points_total = (4 * N) + 1
 
-    x_points=np.zeros(Points_total)
-    y_points=np.zeros(Points_total)
-    z_points=np.zeros(Points_total)
+    x_points = np.zeros(Points_total)
+    y_points = np.zeros(Points_total)
+    z_points = np.zeros(Points_total)
 
-    z_points[(2* N + 1):Points_total] = -z_thick
+    z_points[(2 * N + 1):Points_total] = -z_thick
 
     x_points_new = np.zeros(Points_total + 1)
     y_points_new = np.zeros(Points_total + 1)

@@ -4,7 +4,7 @@ import numpy as np
 def spiralCoilFieldCalcMatrix(I, xPoints, yPoints, zPoints, Px, Py, Pz):
 
 
-    numPoints = len(xPoints)
+    numPoints = xPoints.shape[1]
 
 
     # matrix conversions
@@ -13,17 +13,17 @@ def spiralCoilFieldCalcMatrix(I, xPoints, yPoints, zPoints, Px, Py, Pz):
     yPoints = np.matrix(yPoints)
     zPoints = np.matrix(zPoints)
 
-    ax = xPoints[:, 1:numPoints-1] - xPoints[:, 0:(numPoints-2)]
-    ay = yPoints[:, 1:numPoints-1] - yPoints[:, 0:(numPoints-2)]
-    az = zPoints[:, 1:numPoints-1] - zPoints[:, 0:(numPoints-2)]
+    ax = xPoints[:, 1:numPoints] - xPoints[:, 0:(numPoints-1)]
+    ay = yPoints[:, 1:numPoints] - yPoints[:, 0:(numPoints-1)]
+    az = zPoints[:, 1:numPoints] - zPoints[:, 0:(numPoints-1)]
 
-    bx = xPoints[:,1:numPoints-1] - Px
-    by = yPoints[:,1:numPoints-1] - Py
-    bz = zPoints[:,1:numPoints-1] - Pz
+    bx = xPoints[:,1:numPoints] - Px
+    by = yPoints[:,1:numPoints] - Py
+    bz = zPoints[:,1:numPoints] - Pz
 
-    cx = xPoints[:,0:(numPoints-2)] - Px
-    cy = yPoints[:,0:(numPoints-2)] - Py
-    cz = zPoints[:,0:(numPoints-2)] - Pz
+    cx = xPoints[:,0:(numPoints-1)] - Px
+    cy = yPoints[:,0:(numPoints-1)] - Py
+    cz = zPoints[:,0:(numPoints-1)] - Pz
 
     cMag = np.sqrt(np.square(cx) + np.square(cy) + np.square(cz))
     bMag = np.sqrt(np.square(bx) + np.square(by) + np.square(bz))
