@@ -1,5 +1,5 @@
 from coilmodel import  spiralCoilFieldCalcMatrix
-from coilPoints import spiralCoilDimensionCalc
+from coilpoints import spiralCoilDimensionCalc
 from objective import objectiveCoilSquareCalc3D
 import time
 from scipy.optimize import least_squares
@@ -54,13 +54,13 @@ if __name__== '__main__':
     y_matrix = np.matrix(np.array([[y_points1], [y_points2], [y_points3], [y_points4], [y_points5], [y_points6], [y_points7], [y_points8]]))
     z_matrix = np.matrix(np.array([[z_points1], [z_points2], [z_points3], [z_points4], [z_points5], [z_points6], [z_points7], [z_points8]]))
 
-    [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, x_matrix, y_matrix, z_matrix, 0, 0, 0.14)
+    [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, x_matrix, y_matrix, z_matrix, 0.0, 0.0, 0.14)
 
     Bz = Hz * u0
+    # TODO Expand with other fluxes
 
 
-
-    initialCond = np.array([0,0,0.13,0,0])
+    initialCond = np.array([0.0,0.0,0.12,0,0])
 
     lowerbound = np.array([-0.5, -0.5, 0, 0, 0])
     upperbound = np.array([0.5, 0.5, 0.5, pi, 2*pi])
@@ -69,12 +69,12 @@ if __name__== '__main__':
 
     for i in range(100):
         tic = time.clock()
-        res_1 = least_squares(objectiveCoilSquareCalc3D, initialCond, args=(x_matrix, y_matrix, z_matrix, Bz),  jac='3-point', bounds=(lowerbound,upperbound), method='trf', ftol=1e-16, xtol=1e-8, gtol=1e-12, verbose=1)
+        res_1 = least_squares(objectiveCoilSquareCalc3D, initialCond, args=(x_matrix, y_matrix, z_matrix, Bz),  jac='2-point', bounds=(lowerbound,upperbound), method='trf', ftol=1e-16, xtol=1e-8, gtol=1e-12, verbose=1)
         toc = time.clock()
-        times[i] = tic-toc
+        times[i] = tic - toc
 
     print(res_1.x)
-    print(times)
-    print(1/times)
+    # print(times)
+    # print(1/times)
     dummy = 0
 

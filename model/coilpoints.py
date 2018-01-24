@@ -6,11 +6,11 @@ def spiralCoilDimensionCalc(N,length,width,spacing,thickness,angle):
 
     theta_rot=angle # %default value is pi/2
     # define dimensions
-    l = length  # define side length of outer square
-    w = width   # define width of each track
-    s = spacing # define spacing between tracks
+    l = length   # define side length of outer square
+    w = width    # define width of each track
+    s = spacing  # define spacing between tracks
 
-    ll_s = w + s # line to line spacing
+    ll_s = w + s  # line to line spacing
 
     Points_total = (4 * N) + 1
 
