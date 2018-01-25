@@ -54,14 +54,28 @@ if __name__== '__main__':
     y_matrix = np.matrix(np.array([[y_points1], [y_points2], [y_points3], [y_points4], [y_points5], [y_points6], [y_points7], [y_points8]]))
     z_matrix = np.matrix(np.array([[z_points1], [z_points2], [z_points3], [z_points4], [z_points5], [z_points6], [z_points7], [z_points8]]))
 
-    [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, x_matrix, y_matrix, z_matrix, 0.0, 0.0, 0.14)
 
+    # Enter simulated sensor position and orientation here
+    testPoint = np.array([0.0, 0.0, 0.14, 0.8, 0.2])
+    # Calculate the flux density at the simulated sensor position
+    [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, x_matrix, y_matrix, z_matrix, testPoint[0], testPoint[1], testPoint[2])
+
+    Bx = Hx * u0
+    By = Hy * u0
     Bz = Hz * u0
-    # TODO Expand with other fluxes
 
+    # Determine the flux cutting the sensor at the simulated orientation.
+    # Dot product of the B vector with the A vector (the sensor orientation)
+    Bxsensor = Bx * (np.sin(testPoint[3])*np.cos(testPoint[4]))
+    Bysensor = By * (np.sin(testPoint[3])*np.sin(testPoint[4]))
+    Bzsensor = Bz * (np.cos(testPoint[3]))
 
-    initialCond = np.array([0.0,0.0,0.12,0,0])
+    Btest = Bxsensor + Bysensor + Bzsensor
 
+    # Specify initial condition for the solver
+    initialCond = np.array([0.1, 0.14, 0.14, 0.2, 0.3])
+
+    # Specify the bounds for the trust region algorithm
     lowerbound = np.array([-0.5, -0.5, 0, 0, 0])
     upperbound = np.array([0.5, 0.5, 0.5, pi, 2*pi])
 
@@ -69,11 +83,27 @@ if __name__== '__main__':
 
     for i in range(100):
         tic = time.clock()
-        res_1 = least_squares(objectiveCoilSquareCalc3D, initialCond, args=(x_matrix, y_matrix, z_matrix, Bz),  jac='2-point', bounds=(lowerbound,upperbound), method='trf', ftol=1e-16, xtol=1e-8, gtol=1e-12, verbose=1)
+        res_1 = least_squares(objectiveCoilSquareCalc3D, initialCond, args=(x_matrix, y_matrix, z_matrix, Btest),  jac='2-point', bounds=(lowerbound, upperbound), method='trf', ftol=1e-16, xtol=1e-8, gtol=1e-12, verbose=1)
         toc = time.clock()
         times[i] = tic - toc
 
-    print(res_1.x)
+    print("Test x = ", '%f' % testPoint[0])
+    print("Test y = ", '%f' % testPoint[1])
+    print("Test z = ", '%f' % testPoint[2])
+    print("Test theta = ", '%f' % testPoint[3])
+    print("Test phi = ", '%f' % testPoint[4])
+
+    print("Initial x ," '%f' % initialCond[0])
+    print("Initial y ," '%f' % initialCond[1])
+    print("Initial z ," '%f' % initialCond[2])
+    print("Initial theta ," '%f' % initialCond[3])
+    print("Initial phi ," '%f' % initialCond[4])
+
+    print("x = ", '%f' % res_1.x[0])
+    print("y = ", '%f' % res_1.x[1])
+    print("z = ", '%f' % res_1.x[2])
+    print("theta = ", '%f' % res_1.x[3])
+    print("phi = ", '%f' % res_1.x[4])
     # print(times)
     # print(1/times)
     dummy = 0
