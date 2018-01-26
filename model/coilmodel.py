@@ -17,13 +17,13 @@ def spiralCoilFieldCalcMatrix(I, xPoints, yPoints, zPoints, Px, Py, Pz):
     ay = yPoints[:, 1:numPoints] - yPoints[:, 0:(numPoints-1)]
     az = zPoints[:, 1:numPoints] - zPoints[:, 0:(numPoints-1)]
 
-    bx = xPoints[:,1:numPoints] - Px
-    by = yPoints[:,1:numPoints] - Py
-    bz = zPoints[:,1:numPoints] - Pz
+    bx = xPoints[:, 1:numPoints] - Px
+    by = yPoints[:, 1:numPoints] - Py
+    bz = zPoints[:, 1:numPoints] - Pz
 
-    cx = xPoints[:,0:(numPoints-1)] - Px
-    cy = yPoints[:,0:(numPoints-1)] - Py
-    cz = zPoints[:,0:(numPoints-1)] - Pz
+    cx = xPoints[:, 0:(numPoints-1)] - Px
+    cy = yPoints[:, 0:(numPoints-1)] - Py
+    cz = zPoints[:, 0:(numPoints-1)] - Pz
 
     cMag = np.sqrt(np.square(cx) + np.square(cy) + np.square(cz))
     bMag = np.sqrt(np.square(bx) + np.square(by) + np.square(bz))
@@ -51,7 +51,7 @@ def spiralCoilFieldCalcMatrix(I, xPoints, yPoints, zPoints, Px, Py, Pz):
 
 
 if __name__ == '__main__':
-    from coilPoints import spiralCoilDimensionCalc
+    from coilpoints import spiralCoilDimensionCalc
 
     l = 70e-3
     w = 0.5e-3
