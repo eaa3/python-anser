@@ -24,4 +24,5 @@ def objectiveCoilSquareCalc3D(currentPandO, xcoil, ycoil, zcoil, fluxReal):
     out = fluxModel - fluxReal
     out = np.array(out)
     out = np.ndarray.flatten(out)
+
     return out
