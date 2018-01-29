@@ -65,8 +65,8 @@ if __name__=="__main__":
 
     mag = abs(np.fft.fft(p[0:1000]))
 
-
-    pmat=np.matrix(np.reshape(p, (channels.shape[0],noSamples)).transpose())
+    p = np.array(p)
+    pmat=np.array(np.reshape(p, (channels.shape[0],noSamples)).transpose())
     b=0
     plt.plot(mag)
     plt.show()

@@ -2,7 +2,7 @@ from coilmodel import spiralCoilFieldCalcMatrix
 import numpy as np
 from constants import u0
 
-def objectiveCoilSquareCalc3D(currentPandO, xcoil, ycoil, zcoil, fluxReal):
+def objectiveCoilSquareCalc3D(currentPandO, xcoil, ycoil, zcoil, fluxReal, calibration):
     x = currentPandO[0]
     y = currentPandO[1]
     z = currentPandO[2]
@@ -20,6 +20,8 @@ def objectiveCoilSquareCalc3D(currentPandO, xcoil, ycoil, zcoil, fluxReal):
     Bzsensor = Bz * np.cos(theta)
 
     fluxModel = Bxsensor + Bysensor + Bzsensor
+
+    fluxModel = np.multiply(fluxModel, calibration)
 
     out = fluxModel - fluxReal
     out = np.array(out)
