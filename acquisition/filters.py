@@ -2,9 +2,10 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy.signal import firwin, get_window, chebwin
 from constants import pi
+import pyIGTLink
 
 class filter():
-    def __init__(self, numSamples=1000, transFreqs=np.array([20000,24000,24000,26000,28000,30000,32000,34000]), sampleFreq=1e5):
+    def __init__(self, numSamples=250, transFreqs=np.array([20000,22000,24000,26000,28000,30000,32000,34000]), sampleFreq=1e5):
         self.numSamples = numSamples
 
 
@@ -55,10 +56,28 @@ class filter():
         magResult = 2 * abs(result)
 
         phaseResult = np.angle(result)
-        phaseResult = phaseResult[0, :] - phaseResult[1, :]  # filter.DAQPhase
 
-        fluxSign = np.sign(phaseResult)
+        # Convert any negative angles to positive angles
+        for x in np.nditer(phaseResult, op_flags=['readwrite']):
+            if x < 0:
+                x[...] = 2*pi + x
+            else:
+                pass
+
+
+        phaseDiff = phaseResult[0, :] - phaseResult[1, :] # - np.array([0.3142, 0.3456, 0.3770, 0.4084, 0.4398, 0.4712, 0.5027, 0.5341])# filter.DAQPhase
+
+        for x in np.nditer(phaseDiff, op_flags=['readwrite']):
+            if np.abs(x) > pi:
+                x[...] = -np.sign(x)*(2*pi-np.abs(x))
+            else:
+                pass
+
+
+
+        fluxSign = np.sign(phaseDiff)
         signedFlux = np.multiply(fluxSign, magResult[1, :])
+        signedFlux = np.divide(signedFlux,np.ones([1,8])*1e6)
 
         return np.transpose(signedFlux)
 
