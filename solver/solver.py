@@ -5,7 +5,7 @@ from scipy.optimize import least_squares
 from objective import objectiveCoilSquareCalc3D
 
 class solver():
-    def __init__(self, calibration, model=modelClass, initialCond=np.array([0.1, 0.14, 0.14, 0.2, 0.3]), jac='3-point',
+    def __init__(self, calibration, model=modelClass, initialCond=np.array([0.0, 0.0, 0.14, 0.0, 0.0]), jac='2-point',
                  bounds=([-0.5, -0.5, 0, 0, 0], [0.5, 0.5, 0.5, pi, 2*pi]),
                  method='trf', ftol=1e-16, xtol=1e-6, gtol=1e-16, verbose=1):
 

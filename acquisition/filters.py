@@ -2,13 +2,13 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy.signal import firwin, get_window, chebwin
 from constants import pi
-import pyIGTLink
+from daq import daq
 
 class filter():
-    def __init__(self, numSamples=250, transFreqs=np.array([20000,22000,24000,26000,28000,30000,32000,34000]), sampleFreq=1e5):
-        self.numSamples = numSamples
+    def __init__(self, daqObject, transFreqs=np.array([20000,22000,24000,26000,28000,30000,32000,34000]), sampleFreq=1e5):
 
 
+        self.numSamples = daqObject.numSamples
         # Define parameters
         self.transFreqs = transFreqs
         self.numFreqs = self.transFreqs.shape[0]

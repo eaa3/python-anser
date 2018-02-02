@@ -13,7 +13,7 @@ class daq():
         self._DAQTask = 0
 
         if daqType.upper() == 'NIDAQ':
-            self._DAQTask = nidaq(self.daqName,self.daqChannels,self.numSamples,self.sampFreq)
+            self._DAQTask = nidaq(self.daqName, self.daqChannels, self.numSamples, self.sampFreq)
 
 
     def daqStart(self):
@@ -23,5 +23,5 @@ class daq():
         self._DAQTask.StopTask()
 
     def getData(self):
-        p =  self._DAQTask.get_data_matrix()
+        p = self._DAQTask.get_data_matrix()
         return p

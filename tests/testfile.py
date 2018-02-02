@@ -12,12 +12,12 @@ if __name__ == '__main__':
     myModel = model('square',25,length=70e-3,width=0.5e-3,spacing=0.25e-3, thick=1.6e-3 )
 
     myCal = np.array([0.0968, 0.0998, 0.1010, 0.1000, 0.0992, 0.0986, 0.0962, 0.0932])
-    mySolver = solver(myCal, myModel, verbose=0)
+    mySolver = solver(myCal, myModel, verbose=0,gtol=1e-15)
 
     myDaq = daq('nidaq', daqName='Dev3', channels=np.array([4, 0]))
     myDaq.daqStart()
 
-    myFilter = filter(1000)
+    myFilter = filter(myDaq)
 
     initialCond = np.array([0.0, 0.0, 0.14, 0.0, 0.0])
     mySolver.initialCond = initialCond
