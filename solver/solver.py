@@ -5,9 +5,9 @@ from scipy.optimize import least_squares
 from objective import objectiveCoilSquareCalc3D
 
 class solver():
-    def __init__(self, calibration, model=modelClass, initialCond=np.array([0.0, 0.0, 0.14, 0.0, 0.0]), jac='2-point',
-                 bounds=([-0.5, -0.5, 0, 0, 0], [0.5, 0.5, 0.5, pi, 2*pi]),
-                 method='trf', ftol=1e-16, xtol=1e-6, gtol=1e-16, verbose=1):
+    def __init__(self, calibration, model=modelClass, initialCond=np.array([0.0, 0.0, 0.10, 0.0, 0.0]), jac='2-point',
+                 bounds=([-0.3, -0.3, 0, 0, 0], [0.3, 0.3, 0.3, pi, 2*pi]),
+                 method='trf', ftol=1e-16, xtol=1e-6, gtol=2.2e-16, verbose=1):
 
         self.jac = jac
         self.bounds = bounds

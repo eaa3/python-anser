@@ -1,8 +1,8 @@
 import numpy as np
-from model import model
-from solver import solver
-from daq import daq
-from filters import filter
+from model.model import model
+from solver.solver import solver
+from acquisition.daq import daq
+from acquisition.filters import filter
 from pyIGTLink.pyIGTLink import *
 from pyIGTLink.tests import *
 
@@ -63,10 +63,12 @@ class TrackingSystem():
 
 if __name__ == '__main__':
 
-    anser = TrackingSystem(daqDeviceName='Dev3', sensors=np.array([4,0]), igt=True)
+    from time import sleep
+    anser = TrackingSystem(daqDeviceName='Dev3', sensors=np.array([4,0]), igt=True, samples=250)
     anser.start()
 
     while True:
         po = anser.getPosition(1)
         po_mat = anser.vec2mat(po)
         anser.igtSend(po_mat)
+        sleep(0.01)
