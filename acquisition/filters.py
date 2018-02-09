@@ -65,7 +65,7 @@ class filter():
                 pass
 
 
-        phaseDiff = phaseResult[0, :] - phaseResult[1, :] # - np.array([0.3142, 0.3456, 0.3770, 0.4084, 0.4398, 0.4712, 0.5027, 0.5341])# filter.DAQPhase
+        phaseDiff = phaseResult[0, :] - (phaseResult[1, :]  - np.array([0.3142, 0.3456, 0.3770, 0.4084, 0.4398, 0.4712, 0.5027, 0.5341]))# filter.DAQPhase
 
         for x in np.nditer(phaseDiff, op_flags=['readwrite']):
             if np.abs(x) > pi:

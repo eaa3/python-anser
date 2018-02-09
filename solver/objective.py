@@ -21,7 +21,7 @@ def objectiveCoilSquareCalc3D(currentPandO, xcoil, ycoil, zcoil, fluxReal, calib
 
     fluxModel = Bxsensor + Bysensor + Bzsensor
 
-    fluxModel = np.multiply(fluxModel, calibration)
+    fluxModel = np.multiply(fluxModel, np.transpose(np.matrix(calibration)))
 
     out = fluxModel - fluxReal
     out = np.array(out)
@@ -38,7 +38,7 @@ def objectiveCoilSquareCalc3D_2(currentPandO, xcoil, ycoil, zcoil, fluxReal, cal
     a = currentPandO[3]
     b = currentPandO[4]
     c = currentPandO[5]
-    s = currentPandO[6]
+    s = 1
 
     [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, xcoil, ycoil, zcoil, x, y, z)
 
@@ -49,14 +49,15 @@ def objectiveCoilSquareCalc3D_2(currentPandO, xcoil, ycoil, zcoil, fluxReal, cal
     Bxsensor = Bx * a
     Bysensor = By * b
     Bzsensor = Bz * c
-    s = np.sqrt(a**2 + b**2 + c**2)
+    scalc = np.sqrt(a**2 + b**2 + c**2)
     fluxModel = Bxsensor + Bysensor + Bzsensor
 
-    fluxModel = np.multiply(fluxModel, calibration)
+    fluxModel = np.multiply(fluxModel, np.transpose(np.matrix(calibration)))
 
     out = fluxModel - fluxReal
+    vecmag = s - scalc
     out = np.array(out)
     out = np.ndarray.flatten(out)
-    np.append(out,[[],[],[],[],[],[],[],[1,1,1,1,1,1,1,1]], axis=0)
+    out = np.append(out, vecmag)
     return out
 

@@ -56,7 +56,7 @@ if __name__== '__main__':
 
 
     # Enter simulated sensor position and orientation here
-    testPoint = np.array([0.05, 0.05, 0.14, 1.0, 0.0, 0.0, 1])
+    testPoint = np.array([0.05, 0.05, 0.14, 0.0, 0.0, 1.0])
     # Calculate the flux density at the simulated sensor position
     [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, x_matrix, y_matrix, z_matrix, testPoint[0], testPoint[1], testPoint[2])
 
@@ -71,20 +71,19 @@ if __name__== '__main__':
     Bzsensor = Bz * testPoint[5]
 
     Btest = Bxsensor + Bysensor + Bzsensor
-    np.append(Btest,[[1]],axis=0)
 
     # Specify initial condition for the solver
-    initialCond = np.array([0.0, 0.0, 0.3, 0, 0, 1, 1])
+    initialCond = np.array([0.0, 0.0, 0.3, 0, 0, 1])
 
     # Specify the bounds for the trust region algorithm
-    lowerbound = np.array([-0.5, -0.5, 0, -1,-1,-1, 0.99999999999])
-    upperbound = np.array([0.5, 0.5, 0.5, 1, 1, 1, 1])
+    lowerbound = np.array([-0.3, -0.3, 0, -1,-1,-1])
+    upperbound = np.array([0.3, 0.3, 0.5, 1, 1, 1])
 
     times = np.zeros([100,])
 
-    for i in range(100):
+    for i in range(1):
         tic = time.clock()
-        res_1 = least_squares(objectiveCoilSquareCalc3D_2, initialCond, args=(x_matrix, y_matrix, z_matrix, Btest, np.ones([8,1])),  jac='2-point', bounds=(lowerbound, upperbound), method='trf', ftol=1e-16, xtol=1e-8, gtol=1e-12, verbose=1)
+        res_1 = least_squares(objectiveCoilSquareCalc3D_2, initialCond, args=(x_matrix, y_matrix, z_matrix, Btest, np.ones([8,1])),  jac='3-point', bounds=(lowerbound, upperbound), method='trf', ftol=1e-8, xtol=1e-8, gtol=1e-13, verbose=1)
         toc = time.clock()
         times[i] = tic - toc
 
