@@ -5,6 +5,7 @@ from acquisition.daq import daq
 from acquisition.filters import filter
 from pyIGTLink.pyIGTLink import *
 from pyIGTLink.tests import *
+from constants import pi
 
 
 class TrackingSystem():
@@ -69,6 +70,7 @@ if __name__ == '__main__':
 
     while True:
         po = anser.getPosition(1)
+        po[3] = po[3] + pi
         po_mat = anser.vec2mat(po)
         anser.igtSend(po_mat)
         sleep(0.01)
