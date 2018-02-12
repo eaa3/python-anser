@@ -1,8 +1,7 @@
 import numpy as np
 from numpy.matlib import repmat
 from scipy.signal import firwin, get_window, chebwin
-from constants import pi
-from daq import daq
+from model.constants import pi
 
 class filter():
     def __init__(self, daqObject, transFreqs=np.array([20000,22000,24000,26000,28000,30000,32000,34000]), sampleFreq=1e5):

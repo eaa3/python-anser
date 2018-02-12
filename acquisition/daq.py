@@ -1,5 +1,5 @@
 import numpy as np
-from nidaq import nidaq
+from acquisition.nidaq import nidaq
 
 class daq():
 

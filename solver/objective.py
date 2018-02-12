@@ -1,15 +1,16 @@
-from coilmodel import spiralCoilFieldCalcMatrix
-import numpy as np
-from constants import u0
 
-def objectiveCoilSquareCalc3D(currentPandO, xcoil, ycoil, zcoil, fluxReal, calibration):
+import numpy as np
+from model.constants import u0
+from model.model import model
+
+def objectiveCoilSquareCalc3D(currentPandO, fluxReal, calibration, model):
     x = currentPandO[0]
     y = currentPandO[1]
     z = currentPandO[2]
     theta = currentPandO[3]
     phi = currentPandO[4]
 
-    [Hx, Hy, Hz] = spiralCoilFieldCalcMatrix(1, xcoil, ycoil, zcoil, x, y, z)
+    [Hx, Hy, Hz] = model.getField(np.array([x, y, z]))
 
     Bx = u0 * Hx
     By = u0 * Hy
