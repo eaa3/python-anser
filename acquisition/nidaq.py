@@ -5,6 +5,7 @@ from numpy import zeros
 import numpy as np
 from ctypes import byref
 import threading
+import platform
 
 
 class nidaq(Task):
@@ -19,25 +20,35 @@ class nidaq(Task):
         for i in range(channels.shape[0]):
             self.CreateAIVoltageChan(dev_name+"/ai"+str(channels[i]),"", DAQmx_Val_RSE, -10.0,10.0, DAQmx_Val_Volts, None)
         self.CfgSampClkTiming("", sampleFreq, DAQmx_Val_Rising, DAQmx_Val_ContSamps, data_len)
-        self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,data_len,0)
+
+        if platform.system() == 'Windows':
+            self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,data_len,0)
+        elif (platform.system() == 'Linux' or platform.system() == 'Darwin'):
+            pass
+
+
         self.AutoRegisterDoneEvent(0)
         self._data_lock = threading.Lock()
         self._newdata_event = threading.Event()
     def EveryNCallback(self):
         with self._data_lock:
-            self.ReadAnalogF64(self.data_len, 10.0, DAQmx_Val_GroupByChannel, self._data, self.data_len*self.channels.shape[0], byref(self.read),None)
+            self.ReadAnalogF64(self.data_len, 10.0, DAQmx_Val_GroupByChannel, self._data, self.data_len*self.channels.shape[0], byref(self.read), None)
             self._newdata_event.set()
         return 0 # The function should return an integer
     def DoneCallback(self, status):
         print("Status",status.value)
         return 0 # The function should return an integer
     def get_data(self, blocking=True, timeout=None):
-        if blocking:
-            if not self._newdata_event.wait(timeout):
-                raise ValueError("timeout waiting for data from device")
-        with self._data_lock:
-            self._newdata_event.clear()
-            return self._data.copy()
+        if platform.system() == 'Windows':
+            if blocking:
+                if not self._newdata_event.wait(timeout):
+                    raise ValueError("timeout waiting for data from device")
+            with self._data_lock:
+                self._newdata_event.clear()
+                return self._data.copy()
+        elif (platform.system() == 'Linux' or platform.system() == 'Darwin'):
+            self.ReadAnalogF64(self.data_len, 0.1, DAQmx_Val_GroupByChannel, self._data, self.data_len*self.channels.shape[0], byref(self.read), None)
+            return self._data
     def get_data_matrix(self, timeout=None):
         data = self.get_data(timeout=timeout)
         data_mat = np.matrix(np.reshape(data, (self.channels.shape[0], self.data_len)).transpose())

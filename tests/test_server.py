@@ -1,4 +1,5 @@
 from anser import Anser
+from time import time
 import numpy as np
 
 
@@ -216,9 +217,10 @@ if __name__ == '__main__':
     print("Press Ctrl-C to exit...")
 
     try:
-
-        while True:
-
+        store = np.array([])
+        size = 1000
+        for i in range(size):
+            t = time()
             positionVector = anser.getPosition(1)
             positionMatrix = anser.vec2mat(positionVector)
             anser.igtSendTransform(positionMatrix)
@@ -226,7 +228,11 @@ if __name__ == '__main__':
             if print_option == True:
                 anser.printPosition(positionVector)
 
-            sleep(delay_option)
+            #sleep(delay_option)
+            delay = time() - t
+            store = np.append(store, delay)
+        print(store)
+        print(np.sum(store)/float(size))
     except KeyboardInterrupt:
         exit()
         pass
