@@ -23,11 +23,10 @@ class nidaq(Task):
 
         if platform.system() == 'Windows':
             self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer,data_len,0)
+            self.AutoRegisterDoneEvent(0)
         elif (platform.system() == 'Linux' or platform.system() == 'Darwin'):
             pass
 
-
-        self.AutoRegisterDoneEvent(0)
         self._data_lock = threading.Lock()
         self._newdata_event = threading.Event()
     def EveryNCallback(self):
