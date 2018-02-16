@@ -47,8 +47,8 @@ class nidaq(Task):
                 self._newdata_event.clear()
                 return self._data.copy()
         elif (platform.system() == 'Linux' or platform.system() == 'Darwin'):
-            self.ReadAnalogF64(self.data_len, 0.1, DAQmx_Val_GroupByChannel, self._data, self.data_len*self.channels.shape[0], byref(self.read), None)
-            return self._data
+            self.ReadAnalogF64(self.data_len, 10.0, DAQmx_Val_GroupByChannel, self._data, self.data_len*self.channels.shape[0], byref(self.read), None)
+            return self._data.copy()
     def get_data_matrix(self, timeout=None):
         data = self.get_data(timeout=timeout)
         data_mat = np.matrix(np.reshape(data, (self.channels.shape[0], self.data_len)).transpose())
