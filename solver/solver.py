@@ -38,6 +38,7 @@ class solver():
                                          jac=self.jac, bounds=self.bounds, method=self.method,
                                          ftol=self.ftol, xtol=self.xtol,
                                          gtol=self.gtol, verbose=self.verbosity)
+            return result
         elif self.solverType == 2:
             result = least_squares(objectiveCoilSquareCalc3D_2, self.initialCond,
                                    args=(flux, self.calibration, self.modelObject),
@@ -45,5 +46,5 @@ class solver():
                                          ftol=self.ftol, xtol=self.xtol,
                                          gtol=self.gtol, verbose=self.verbosity)
 
-        return result
+            return result
 
