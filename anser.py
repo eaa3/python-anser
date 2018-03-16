@@ -1,7 +1,7 @@
-from model.model import model
-from solver.solver import solver
-from acquisition.daq import daq
-from filter.filter import filter
+from model.model import MagneticModel
+from solver.solver import Solver
+from acquisition.daq import Daq
+from filter.filter import Filter
 from pyIGTLink.pyIGTLink import *
 from pyIGTLink.tests import *
 from model.constants import pi
@@ -10,34 +10,23 @@ from model.constants import pi
 
 class Anser():
 
-    def __init__(self, daqDeviceName='Dev1', daqHardwareType='nidaq', freqs=np.array([20000,22000,24000,26000,28000,30000,32000,34000]), samples=1000,
-                      samplefreq=1e5, serial='', modeltype='square', solverType=1, verbosity=0, igt=False, sensors=np.array([])):
+    def __init__(self, daqDeviceName, daqHardwareType, freqs, samples, samplefreq, serial, modeltype, sensors,
+                 verbosity=0, igt=False):
 
 
-        self.cal = np.array([0.0890,   0.0930,    0.0945,    0.0939,    0.0946,    0.0936,    0.0922,    0.0888])
+        self.cal = np.array([0,0,0,0,0,0,0,0])
 
-        self.model = model(modeltype, 25, length=70e-3, width=0.5e-3, spacing=0.25e-3, thick=1.6e-3)
-
-
-        if solverType == 1:
-            self.solver = solver(self.cal, solverType, self.model, verbose=verbosity,
+        self.model = MagneticModel(modeltype, 25, length=70e-3, width=0.5e-3, spacing=0.25e-3, thick=1.6e-3)
+        self.solver = Solver(self.cal, self.model, verbose=verbosity,
                                  bounds=([-0.5, -0.5, 0, -pi, -3*pi], [0.5, 0.5, 0.5, pi, 3*pi]),
                                  initialCond=[0.0, 0.0, 0.10, 0.0, 0.0])
-        elif solverType == 2:
-            self.solver = solver(self.cal, solverType, self.model, verbose=verbosity,
-                                 bounds=([-0.3, -0.3, 0, -1,-1,-1],[0.3, 0.3, 0.3, 1, 1, 1]),
-                                 initialCond=[0.0, 0.0, 0.15, 0, 0, 1])
 
+        self.daq = Daq(daqHardwareType, daqName=daqDeviceName, channels=sensors, numSamples=samples)
+        self.filter = Filter(self.daq, freqs, sampleFreq=samplefreq)
 
-
-        self.daq = daq('nidaq', daqName=daqDeviceName, channels=sensors, numSamples=samples)
-        self.filter = filter(self.daq, freqs, sampleFreq=samplefreq)
-
-        # Create OpenIGTLink client connection
+        # Create local OpenIGTLink server
         if igt==True:
             self.igtconn = PyIGTLink(localServer=True)
-
-        self.flipFlag = False
 
     def vec2mat(self, array=np.array(np.zeros([1,5]))):
 
@@ -47,9 +36,9 @@ class Anser():
                                     [0, 0, 0, 1]])
         return mat
 
-    def igtSendTransform(self, mat):
+    def igtSendTransform(self, mat, device_name=''):
 
-        matmsg = TransformMessage(mat)
+        matmsg = TransformMessage(mat, device_name=device_name)
         self.igtconn.add_message_to_send_queue(matmsg)
 
     def getResolveSensor(self, sensorNo):
@@ -58,7 +47,7 @@ class Anser():
         demod = self.filter.demodulateSignalRef(data, sensorNo)
         result = self.solver.solveLeastSquares(demod)
 
-        # Wrap around angles to preserve contraints
+        # Wrap around angles to preserve constraints
         wrapresult = self.angleWrap(result)
 
         self.solver.initialCond = wrapresult.x

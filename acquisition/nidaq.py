@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 from PyDAQmx import *
-from PyDAQmx.DAQmxCallBack import *
 from numpy import zeros
 import numpy as np
 from ctypes import byref
@@ -56,9 +54,10 @@ class nidaq(Task):
 
 if __name__=="__main__":
 
+    # Test script for NI acqusition unit
     import matplotlib.pyplot as plt
-    # Test script
-    channels = np.array([4, 1, 2, 3])
+
+    channels = np.array([0])
     sampleFreq = 100000
     noSamples = 1000
     deviceID = 'Dev3'

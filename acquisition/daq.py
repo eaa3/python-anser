@@ -1,7 +1,7 @@
 import numpy as np
 from acquisition.nidaq import nidaq
 
-class daq():
+class Daq():
 
     def __init__(self, daqType='nidaq', daqName = 'Dev1', channels=np.array([0]), sampFreq=1e5, numSamples=1000):
         self.daqType = daqType

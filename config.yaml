@@ -1,0 +1,41 @@
+# General system parameters including data acquisition unit
+system:
+  system_version: anser
+  device_type: nidaq
+  device_name: Dev1
+  serial_name: COM1
+
+# Model parameters for the tracking system emitter coils. The number of coils much match the number of frequencies
+model:
+  model_type: square
+  num_coils: 8
+  num_turns: 25
+  trace_length: 0.07
+  trace_width: 0.0005
+  trace_spacing: 0.00025
+  trace_thickness: 0.0016
+
+# Filter settings parameters
+filter:
+  num_freqs: 8
+  num_samples: 1000
+  sampling_freq: 100000
+  cutoff_freq: 0.00005
+  attenuation: 200
+  window_type: chebwin
+  passdc: True
+  scale: True
+  freqs:
+    coil1: 20000
+    coil2: 22000
+    coil3: 24000
+    coil4: 26000
+    coil5: 28000
+    coil6: 30000
+    coil7: 32000
+    coil8: 34000
+
+# Calibration algorithm parameters
+# Calibration data for each channel is stored in a separate file
+calibration:
+  num_points = 49

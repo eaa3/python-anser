@@ -1,30 +1,36 @@
 import numpy as np
 from numpy.matlib import repmat
-from scipy.signal import firwin, get_window, chebwin
+from scipy.signal import firwin
 from model.constants import pi
 
-class filter():
-    def __init__(self, daqObject, transFreqs=np.array([20000,22000,24000,26000,28000,30000,32000,34000]), sampleFreq=1e5):
+class Filter():
+    def __init__(self, filter_config):
 
+        # The number of samples per frame acquired by the DAQ unit
+        self.numSamples = filter_config['num_samples']
+        # Define filter parameters
+        self.numFreqs = filter_config['num_freqs']
+        self.transFreqs = np.array([])
+        for key, value in filter_config['freqs'].items():
+            self.transFreqs = np.append(self.transFreqs, value)
 
-        self.numSamples = daqObject.numSamples
-        # Define parameters
-        self.transFreqs = transFreqs
-        self.numFreqs = self.transFreqs.shape[0]
-        self.sampleFreq = sampleFreq
+        self.numFreqs = filter_config['num_freqs']
+        self.sampleFreq = filter_config['sampling_freq']
+        self.cutoff = filter_config['cutoff_freq']
+        self.windowType = filter_config['window_type']
+        self.attenuation = filter_config['attenuation']
+        self.passDC = filter_config['passdc']
+        self.scale = filter_config['scale']
+
+        # Generate digital input filter
+        self.filterGen(self.cutoff, (self.windowType, self.attenuation), width=None, passDC=self.passDC,
+                       scale=self.scale)
+
         self.filtArray = np.array([])
-        self.filtMatrix = np.matrix(self.filtArray)
+        self.filtMatrix = np.matrix(self.filtArray, dtype=float)
         self.demodArray = np.zeros([self.numFreqs, self.numSamples], dtype=complex)
         self.demodMatrix = np.matrix(self.demodArray)
 
-
-        # Generate filter
-        self.cutoff = 5e-5
-        self.window = ('chebwin', 200)
-        self.width = None
-        self.passDC = True
-        self.scale = True
-        self.filterGen(cutoff=5e-5, window=('chebwin', 200), width=None, passDC=True, scale=True)
 
         # TODO Create an intelligent way of calculating the DAQ phase offsets
         # self.daqPhaseOffset = 0
@@ -36,24 +42,30 @@ class filter():
             self.demodMatrix[i, :] = [np.exp(2*pi*self.transFreqs[i]*self.timeArray * 1j)]
 
 
-
-    def filterGen(self, cutoff=5e-5, window=('chebwin', 200), width=None, passDC=True, scale=True):
+    def filterGen(self, cutoff, window, width=None, passDC=True, scale=True):
         self.filtArray = firwin(self.numSamples, cutoff, width=width, window=window, pass_zero=passDC, scale=scale)
         self.filtMatrix = np.matrix(repmat(self.filtArray, 2, 1))
 
     def demodulateSignalRef(self, data, channel):
-        filtWindow = self.filtMatrix
-        demodMat = self.demodMatrix
 
+        # This scale approximately takes into account various sensor acquisition constants (cross sectional area, sensor
+        # turns, amplifier gain etc.)
+        # All these content parameters can be lumped into this single parameter 'mag_scale'
+        # This initial scaling behaves as a _very_ rough calibration approximation, and merely serves to scale the
+        # acquired sensor voltages (i.e. flux) such that they lie when the same order of magnitude as the magnetic
+        # field model. This helps convergence of the final calibration algorithm.
+        mag_scale = 1e-6
+
+        # Reference channel for the current sensing
+        # TODO This should be obtained from a file.
         refIndex = 0
 
         dataDemod = np.transpose(np.column_stack((data[:, refIndex], data[:, channel])))
 
-        result = np.multiply(dataDemod, filtWindow)
-        result = result * np.transpose(demodMat)
+        result = np.multiply(dataDemod, self.filtMatrix)
+        result = result * np.transpose(self.demodMatrix)
 
         magResult = 2 * abs(result)
-
         phaseResult = np.angle(result)
 
         # Convert any negative angles to positive angles
@@ -76,22 +88,6 @@ class filter():
 
         fluxSign = np.sign(phaseDiff)
         signedFlux = np.multiply(fluxSign, magResult[1, :])
-        signedFlux = np.divide(signedFlux,np.ones([1,8])*1e6)
+        signedFlux = np.divide(signedFlux, np.ones([1,8]) * mag_scale)
 
         return np.transpose(signedFlux)
-
-
-
-
-
-if __name__=='__main__':
-
-    import matplotlib.pyplot as plt
-    myfilt = filter(1000,np.array([20000,22000,24000,26000,28000,30000,32000,34000]), 100000)
-
-
-    myfilt.filterGen(0.0005)
-
-    plt.plot(myfilt.filtArray)
-    plt.show()
-    b = 0

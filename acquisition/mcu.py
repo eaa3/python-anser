@@ -1,7 +1,5 @@
 import serial
 
-
-
 class Mcu():
 
     def __init__(self, portname):

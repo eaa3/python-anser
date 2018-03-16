@@ -1,14 +1,15 @@
 import numpy as np
-from model.constants import u0, pi
-from model import model as modelClass
 from scipy.optimize import least_squares
-from solver.objective import objectiveCoilSquareCalc3D, objectiveCoilSquareCalc3D_2
+from model.constants import u0, pi
+from model.model import MagneticModel
+from solver.objective import objectiveCoilSquareCalc3D
 
-class solver():
-    def __init__(self, calibration, solverType, model=modelClass, initialCond=np.array([0.0, 0.0, 0.10, 0.0, 0.0]), jac='2-point',
+class Solver():
+    def __init__(self, calibration, model=MagneticModel, initialCond=np.array([0.0, 0.0, 0.10, 0.0, 0.0]), jac='2-point',
                  bounds=([-0.3, -0.3, 0.0, 0, 0], [0.3, 0.3, 0.3, pi, 2*pi]),
                  method='trf', ftol=2.3e-16, xtol=1e-6, gtol=2.3e-16, verbose=1):
 
+        # Solver settings
         self.jac = jac
         self.bounds = bounds
         self.method = method
@@ -16,14 +17,14 @@ class solver():
         self.xtol = xtol
         self.gtol = gtol
         self.verbosity = verbose
-
-        self.solverType = solverType
         self.modelObject = model
-        self.initialCond = initialCond
-
+        # Initial conditions for the solver
+        self.conditions = initialCond
+        # Matrix of calibration values
         self.calibration = calibration
 
-        self.result = np.array([])
+        # Variables to hold results of the solver
+        self.result = np.zeros([1, initialCond.size[1]])
         self.resCost = 0
         self.residuals = 0
         self.optimality = 0
@@ -31,20 +32,11 @@ class solver():
 
     def solveLeastSquares(self, flux):
 
-        # result =np.ones([1,5])
-        if self.solverType == 1:
-            result = least_squares(objectiveCoilSquareCalc3D, self.initialCond,
-                                   args=(flux,self.calibration, self.modelObject),
-                                         jac=self.jac, bounds=self.bounds, method=self.method,
-                                         ftol=self.ftol, xtol=self.xtol,
-                                         gtol=self.gtol, verbose=self.verbosity)
-            return result
-        elif self.solverType == 2:
-            result = least_squares(objectiveCoilSquareCalc3D_2, self.initialCond,
-                                   args=(flux, self.calibration, self.modelObject),
-                                         jac=self.jac, bounds=self.bounds, method=self.method,
-                                         ftol=self.ftol, xtol=self.xtol,
-                                         gtol=self.gtol, verbose=self.verbosity)
 
-            return result
+        result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+                               args=(flux, self.calibration, self.modelObject),
+                                     jac=self.jac, bounds=self.bounds, method=self.method,
+                                     ftol=self.ftol, xtol=self.xtol,
+                                     gtol=self.gtol, verbose=self.verbosity)
+        return result
 

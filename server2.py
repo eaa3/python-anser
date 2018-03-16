@@ -1,6 +1,6 @@
 from anser import Anser
 import numpy as np
-from time import time
+
 
 
 # Simple object for storing all command arguments
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     if args.sensors != None:
         sensors_option = ast.literal_eval(args.sensors)
     else:
-        sensors_option = np.array([4,0,9])  # For Anser 1.0
+        sensors_option = np.array([4,8,1])  # For Anser 1.0
 
     if args.frequencies != None:
         freqselect_option = ast.literal_eval(args.frequencies)
@@ -218,29 +218,44 @@ if __name__ == '__main__':
     initcond1 = np.array([0.0, 0.0, 0.10, 0.0, 0.0])
     initcond2 = np.array([0.0, 0.0, 0.10, 0.0, 0.0])
 
-    elapsed = np.zeros([201,1])
+    positions = np.zeros([150,5])
+    means = np.zeros([49,5])
     index = 0
     try:
 
         while True:
 
-            t = time()
+
+
+
+           #positionVector = anser.getPosition(1)
+           #initcond1 = positionVector
+           #positionVector[3] = positionVector[3] + np.pi
+           #positionMatrix = anser.vec2mat(positionVector)
+           #anser.igtSendTransform(positionMatrix, device_name='Needle1')
+
+
+            anser.solver.initialCond = initcond1
+            anser.solver.calibration = anser.cal_Ch2
             positionVector = anser.getPosition(1)
+            initcond1 = positionVector
+            positionVector[3] = positionVector[3] + np.pi
             positionMatrix = anser.vec2mat(positionVector)
             anser.igtSendTransform(positionMatrix, device_name='Needle1')
 
 
-            if print_option == True:
-                anser.printPosition(positionVector)
+
+            anser.solver.initialCond = initcond2
+            anser.solver.calibration = anser.cal_Ch3
+            positionVector = anser.getPosition(2)
+            initcond2 = positionVector
+            positionVector[3] = positionVector[3] + np.pi
+            positionMatrix = anser.vec2mat(positionVector)
+            anser.igtSendTransform(positionMatrix, device_name='Needle2')
+
+            sleep(delay_option)
 
 
-
-            #elapsed[index,0] = time() - t
-           # if index==200:
-            #    np.savetxt('dynamic5000.csv',1/elapsed)
-            #    exit()
-
-           # index = index + 1
 
 
 

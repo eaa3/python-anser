@@ -1,22 +1,24 @@
 import numpy as np
 
-class model():
+class MagneticModel():
 
 
     def __init__(self, modelType='square', coilTurns=25, length=70e-3, width=0.5e-3, spacing=0.25e-3, thick=1.6e-3):
 
-        self.modelType = modelType
-        self.coilTurns = coilTurns
-        self.turnLength = length
-        self.traceWidth = width
-        self.traceSpacing = spacing
-        self.traceThickness = thick
 
-        self.xPointsTrans = np.array([])
-        self.yPointsTrans = np.array([])
-        self.zPointsTrans = np.array([])
 
         if modelType.upper() == 'SQUARE':
+
+            self.modelType = modelType
+            self.coilTurns = coilTurns
+            self.turnLength = length
+            self.traceWidth = width
+            self.traceSpacing = spacing
+            self.traceThickness = thick
+
+            self.xPointsTrans = np.array([])
+            self.yPointsTrans = np.array([])
+            self.zPointsTrans = np.array([])
 
             x_centres = np.array([-93.543, 0, 93.543, -68.55, 68.55, -93.543, 0, 93.543])
             x_centres = x_centres * 1.0e-3
