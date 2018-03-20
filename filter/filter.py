@@ -14,7 +14,6 @@ class Filter():
         for key, value in filter_config['freqs'].items():
             self.transFreqs = np.append(self.transFreqs, value)
 
-        self.numFreqs = filter_config['num_freqs']
         self.sampleFreq = filter_config['sampling_freq']
         self.cutoff = filter_config['cutoff_freq']
         self.windowType = filter_config['window_type']

@@ -5,26 +5,25 @@ from model.model import MagneticModel
 from solver.objective import objectiveCoilSquareCalc3D
 
 class Solver():
-    def __init__(self, calibration, model=MagneticModel, initialCond=np.array([0.0, 0.0, 0.10, 0.0, 0.0]), jac='2-point',
-                 bounds=([-0.3, -0.3, 0.0, 0, 0], [0.3, 0.3, 0.3, pi, 2*pi]),
-                 method='trf', ftol=2.3e-16, xtol=1e-6, gtol=2.3e-16, verbose=1):
+    def __init__(self, calibration, model, solver_config):
 
         # Solver settings
-        self.jac = jac
-        self.bounds = bounds
-        self.method = method
-        self.ftol = ftol
-        self.xtol = xtol
-        self.gtol = gtol
-        self.verbosity = verbose
+        self.jac = solver_config['jacobian']
+        self.bounds = solver_config['bounds_min']
+        self.method = solver_config['bound_max']
+        self.ftol = solver_config['ftol']
+        self.xtol = solver_config['xtol']
+        self.gtol = solver_config['gtol']
+        self.verbosity = solver_config['verbosity']
+        self.conditions = solver_config['initial_cond']
+
         self.modelObject = model
-        # Initial conditions for the solver
-        self.conditions = initialCond
+
         # Matrix of calibration values
         self.calibration = calibration
 
         # Variables to hold results of the solver
-        self.result = np.zeros([1, initialCond.size[1]])
+        self.result = np.zeros([1, self.conditions.size[1]])
         self.resCost = 0
         self.residuals = 0
         self.optimality = 0

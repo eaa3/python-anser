@@ -1,3 +1,4 @@
+from utils.settings import get_settings
 from model.model import MagneticModel
 from solver.solver import Solver
 from acquisition.daq import Daq
@@ -10,16 +11,13 @@ from model.constants import pi
 
 class Anser():
 
-    def __init__(self, daqDeviceName, daqHardwareType, freqs, samples, samplefreq, serial, modeltype, sensors,
-                 verbosity=0, igt=False):
+    def __init__(self, config):
 
 
         self.cal = np.array([0,0,0,0,0,0,0,0])
 
-        self.model = MagneticModel(modeltype, 25, length=70e-3, width=0.5e-3, spacing=0.25e-3, thick=1.6e-3)
-        self.solver = Solver(self.cal, self.model, verbose=verbosity,
-                                 bounds=([-0.5, -0.5, 0, -pi, -3*pi], [0.5, 0.5, 0.5, pi, 3*pi]),
-                                 initialCond=[0.0, 0.0, 0.10, 0.0, 0.0])
+        self.model = MagneticModel(config['model'])
+        self.solver = Solver(self.cal, self.model, config['solver'])
 
         self.daq = Daq(daqHardwareType, daqName=daqDeviceName, channels=sensors, numSamples=samples)
         self.filter = Filter(self.daq, freqs, sampleFreq=samplefreq)
