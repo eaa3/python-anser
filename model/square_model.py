@@ -217,4 +217,4 @@ def _spiralCoilDimensionCalc(N, length, width, spacing, thickness, angle):
 
         y_points_out = y_points_out - length / (np.sqrt(2))
 
-    return x_points_out, y_points_out, z_points
+    return x_points_out, y_points_out, z_points_out

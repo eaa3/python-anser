@@ -1,4 +1,4 @@
-from utils.settings import get_settings
+from utils.settings import get_settings, get_calibration
 from model.model import MagneticModel
 from solver.solver import Solver
 from acquisition.daq import Daq
@@ -13,20 +13,26 @@ class Anser():
 
     def __init__(self, config):
 
-
-        self.cal = np.array([0,0,0,0,0,0,0,0])
+        self.cal_dict = get_calibration('calibration.yaml')
+        self.cal = np.array(self.cal_dict[1])
 
         self.model = MagneticModel(config['model'])
         self.solver = Solver(self.cal, self.model, config['solver'])
 
-        self.daq = Daq(daqHardwareType, daqName=daqDeviceName, channels=sensors, numSamples=samples)
-        self.filter = Filter(self.daq, freqs, sampleFreq=samplefreq)
+        self.channels = config['system']['channels']
+
+        self.daq = Daq(config)
+        self.filter = Filter(config)
+
+        self.data = np.matrix([])
+        self.magnitudes = np.matrix([])
 
         # Create local OpenIGTLink server
-        if igt==True:
-            self.igtconn = PyIGTLink(localServer=True)
+        self.igtconn = None
+        if config['system']['igt'] is True:
+            self.igtconn = PyIGTLink(port=config['system']['igt_port'], localServer=config['system']['igt_local'])
 
-    def vec2mat(self, array=np.array(np.zeros([1,5]))):
+    def vec2mat5DOF(self, array=np.array(np.zeros([1,5]))):
 
         mat = np.matrix([[np.cos(array[4])*np.cos(array[3]), -np.sin(array[4]), np.cos(array[4])*np.sin(array[3]), array[0]*1000],
                                     [np.sin(array[4])*np.cos(array[3]), np.cos(array[4]), np.sin(array[4])*np.sin(array[3]), array[1]*1000],
@@ -34,16 +40,23 @@ class Anser():
                                     [0, 0, 0, 1]])
         return mat
 
+    def vec2mat6DOF(self, array=np.array(np.zeros([1,6]))):
+
+        pass
+
     def igtSendTransform(self, mat, device_name=''):
 
         matmsg = TransformMessage(mat, device_name=device_name)
         self.igtconn.add_message_to_send_queue(matmsg)
 
-    def getResolveSensor(self, sensorNo):
 
-        data = self.daq.getData()
-        demod = self.filter.demodulateSignalRef(data, sensorNo)
-        result = self.solver.solveLeastSquares(demod)
+    def sampleUpdate(self):
+        self.data = self.daq.getData()
+
+    def resolvePosition(self, sensorNo):
+
+        magnitudes = self.filter.demodulateSignalRef(self.data, sensorNo)
+        result = self.solver.solveLeastSquares(magnitudes)
 
         # Wrap around angles to preserve constraints
         wrapresult = self.angleWrap(result)
@@ -54,10 +67,8 @@ class Anser():
 
     def getPosition(self, sensorNo):
 
-        position = self.getResolveSensor(sensorNo)
-
-        if self.flipFlag == True:
-            position[3] = position[3] + pi
+        self.solver.calibration = np.array(self.cal_dict[sensorNo])
+        position = self.resolvePosition(self.channels.index(sensorNo) + 1)
 
         return position
 

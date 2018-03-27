@@ -17,59 +17,48 @@ def printInfo(channels=np.array([]),):
     print('All rights reserved.')
     print('This code is licensed under the BSD 3-Clause License.\n\n')
 
-def printSettings(options):
+def printSettings(config):
 
     print('Sensor channels: ', end='')
-    print(options.sensors_option)
+    print(config['system']['channels'])
 
     print('Transmitting frequencies: ', end='')
-    print(options.freqselect_option)
-
-    print('Sensor channels: ', end='')
-    print(options.frequency_option)
+    print(config['filter']['freqs'])
 
     print('Samples per acquisition: ', end='')
-    print(options.sample_option)
-
-    print('Controller serial enabled: ', end='')
-    print(controller_option)
+    print(config['filter']['num_samples'])
 
     print('Serial port name: ', end='')
-    print(options.controllername_option)
+    print(config['system']['serial_name'])
 
     print('Update rate: ', end='')
-    print(1/(options.delay_option))
-
+    print(1 / (config['system']['update_delay']))
 
     print('Magnetic model type: ', end='')
-    print(options.modeltype_option)
+    print(config['model']['model_name'])
 
     print('Acquisition hardware type: ', end='')
-    print(options.hardwaretype_option)
+    print(config['system']['device_type'])
 
     print('Acquisition hardware name: ', end='')
-    print(options.devicename_option)
+    print(config['system']['device_name'])
 
     print('Server verbosity level: ', end='')
-    print(options.verbosity_option)
+    print(config['solver']['verbosity'])
 
     print('OpenIGTLink enable: ', end='')
-    print(options.igt_option)
+    print(config['system']['igt'])
 
     print('OpenIGTLink port number: ', end='')
-    print(options.port_option)
+    print(config['system']['igt_port'])
 
     print('Print positions enable: ', end='')
-    print(options.print_option)
+    print(config['system']['print'])
 
     print('Flip orientation enable: ', end='')
-    print(options.flip_option)
-
+    print(config['system']['flip_enable'])
 
     print('')
-
-
-
 
 
 
@@ -79,6 +68,9 @@ if __name__ == '__main__':
     from time import sleep
     import ast
     import argparse
+    from utils.settings import get_settings
+
+    config = get_settings()
 
     parser = argparse.ArgumentParser(description='Settings for the Anser EMT system. If no settings are provided then tracking for sensor channel 1 will begin.')
     parser.add_argument('-s', '--sensors', help='A list of sensors to track')
@@ -117,135 +109,80 @@ if __name__ == '__main__':
     args = parser.parse_args()
     options = optionContainer()
 
-    if args.sensors != None:
-        sensors_option = ast.literal_eval(args.sensors)
-    else:
-        sensors_option = np.array([4,0,9])  # For Anser 1.0
+    if args.sensors is not None:
+        config['system']['channels'] = ast.literal_eval(args.sensors)
 
-    if args.frequencies != None:
-        freqselect_option = ast.literal_eval(args.frequencies)
-    else:
-        freqselect_option = default_freqs  # For Anser 1.0
+    if args.frequencies is not None:
+        config['filter']['freqs'] = ast.literal_eval(args.frequencies)
 
-    if args.frequencysample != None:
-        frequency_option = args.frequencysample
-    else:
-        frequency_option = 100000
+    if args.frequencysample is not None:
+        config['filter']['sampling_freq'] = args.frequencysample
 
-    if args.samplelength != None:
-        sample_option = args.samplelength
-    else:
-        sample_option = 1000
+    if args.samplelength is not None:
+        config['filter']['num_samples'] = args.samplelength
 
-    if args.controller != None:
+    if args.controller is not None:
         controller_option = 1
-        controllername_option = args.controller
-    else:
-        controller_option = 0
-        controllername_option = 'COM1'
+        config['system']['serial_name'] = args.controller
 
-    if args.updatespeed != None:
-        delay_option =  1/args.updatespeed
-    else:
-        delay_option = 1e-10
+    if args.updatespeed is not None:
+        config['system']['update_delay'] = 1/args.updatespeed
 
-    if args.modeltype != None:
-        modeltype_option = args.modeltype
-    else:
-        modeltype_option = 'square'
+    if args.modeltype is not None:
+        config['model']['model_name'] = args.modeltype
 
-    if args.hardwaretype != None:
-        hardwaretype_option = args.hardware
-    else:
-        hardwaretype_option = 'nidaq'
+    if args.hardwaretype is not None:
+        config['system']['device_type'] = args.hardware
 
-    devicename_option = 'Dev1'
-    if args.devicename != None:
-        devicename_option = args.devicename
-    else:
-        if hardwaretype_option == 'nidaq':
-            devicename_option = 'Dev1'
-        elif hardwaretype_option == 'mccdaq':
-            devicename_option = 'board1'
+    if args.devicename is not None:
+        config['system']['device_name'] = args.devicename
 
-    if args.verbosity != None:
-        verbosity_option = args.verbosity
-    else:
-        verbosity_option = 0
+    if args.verbosity is not None:
+        config['solver']['verbosity'] = args.verbosity
 
-    if args.port != None:
-        port_option = args.port
-    else:
-        port_option = 18944
+    if args.port is not None:
+        config['system']['igt_port'] = args.port
 
     igt_option = args.igt
     print_option = args.print
     flip_option = args.flip
 
-    options.sensors_option = sensors_option
-    options.freqselect_option = freqselect_option
-    options.frequency_option = frequency_option
-    options.sample_option = sample_option
-    options.controller_option = controller_option
-    options.controllername_option = controllername_option
-    options.delay_option = delay_option
-    options.modeltype_option = modeltype_option
-    options.hardwaretype_option = hardwaretype_option
-    options.devicename_option = devicename_option
-    options.verbosity_option = verbosity_option
-    options.port_option = port_option
-    options.igt_option = igt_option
-    options.print_option = print_option
-    options.flip_option = flip_option
-
-
     printInfo()
-    printSettings(options)
+    printSettings(config)
 
-    # Create an instance of the tracking system
-    anser = Anser(daqDeviceName=devicename_option, daqHardwareType=hardwaretype_option, sensors=sensors_option, igt=igt_option,
-                           samples=sample_option, samplefreq=frequency_option, verbosity=verbosity_option,
-                           solverType=1, modeltype=modeltype_option)
-
-    # Initialise the tracking system DAQ
-    anser.start()
-
-    # Enable sensor flipping if needed. This should only be used for testing
-    anser.angleFlip(flip_option)
-    print("System Running")
-    print("Press Ctrl-C to exit...")
-
-    initcond1 = np.array([0.0, 0.0, 0.10, 0.0, 0.0])
-    initcond2 = np.array([0.0, 0.0, 0.10, 0.0, 0.0])
-
-    elapsed = np.zeros([201,1])
-    index = 0
     try:
 
+        # Create an instance of the tracking system
+        anser = Anser(config)
+        # Initialise the tracking system DAQ
+        anser.start()
+        # Enable sensor flipping if needed. This should only be used for testing
+        # TODO: Modify this to accept a vector/dict of flip flags
+        anser.angleFlip(flip_option)
+        print("System Running")
+        print("Press Ctrl-C to exit...")
+
+        init1 = [0, 0, 0.2, 0, 0]
+        init2 = [0, 0, 0.2, 0, 0]
         while True:
 
             t = time()
-            positionVector = anser.getPosition(1)
-            positionMatrix = anser.vec2mat(positionVector)
-            anser.igtSendTransform(positionMatrix, device_name='Needle1')
+            anser.sampleUpdate()
 
+            anser.solver.conditions = init1
+            positionVector1 = anser.getPosition(1)
+            positionMatrix1 = anser.vec2mat5DOF(positionVector1)
+            init1 = positionVector1
+            anser.igtSendTransform(positionMatrix1, device_name='Needle1')
 
-            if print_option == True:
-                anser.printPosition(positionVector)
+            anser.solver.conditions = init2
+            positionVector2 = anser.getPosition(4)
+            positionMatrix2 = anser.vec2mat5DOF(positionVector2)
+            init2 = positionVector2
+            anser.igtSendTransform(positionMatrix2, device_name='Needle2')
 
-
-
-            #elapsed[index,0] = time() - t
-           # if index==200:
-            #    np.savetxt('dynamic5000.csv',1/elapsed)
-            #    exit()
-
-           # index = index + 1
-
-
-
-
-
+            #if print_option == True:
+             #   anser.printPosition(positionVector)
 
     except KeyboardInterrupt:
         exit()

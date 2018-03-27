@@ -15,13 +15,13 @@ def import_settings_file(filename='config.yaml'):
 def export_settings(filename='config.yaml'):
     pass
 
-def get_settings(settings_type, filename='config.yaml'):
-    settings_dict = import_settings_file(filename)
-    system_config = settings_dict['system']
-    model_config = settings_dict['model']
-    filter_config = settings_dict['filter']
-    solver_config = settings_dict['solver']
-    calibration_config = settings_dict['calibration']
+def get_settings(settings_type='', filename='config.yaml'):
+    config = import_settings_file(filename)
+    system_config = config['system']
+    model_config = config['model']
+    filter_config = config['filter']
+    solver_config = config['solver']
+    calibration_config = config['calibration']
 
     if settings_type == 'system':
         return system_config
@@ -33,7 +33,13 @@ def get_settings(settings_type, filename='config.yaml'):
         return solver_config
     elif settings_type == 'calibration':
         return calibration_config
+    else:
+        return config
 
 
 
+def get_calibration(filename='calibration.yaml'):
 
+    cals = import_settings_file(filename)
+
+    return cals
