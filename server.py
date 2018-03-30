@@ -9,7 +9,7 @@ class optionContainer(object):
 
 
 # Miscellaneous functions.
-def printInfo(channels=np.array([]),):
+def print_info():
     print('\nAnser EMT')
     print('---------')
     print('An open-source electromagnetic tracking system')
@@ -17,7 +17,7 @@ def printInfo(channels=np.array([]),):
     print('All rights reserved.')
     print('This code is licensed under the BSD 3-Clause License.\n\n')
 
-def printSettings(config):
+def print_settings(config):
 
     print('Sensor channels: ', end='')
     print(config['system']['channels'])
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('-P', '--port', type=int,
                         help='The port used to host the server (default=18944)')
     parser.add_argument('-fl', '--flip', help='Flip the orientation of the 5-DOF sensor',
-                        action='store_true', default=False)
+                        action='append', required=False)
 
     # Default system frequencies.
     default_freqs = [20000,22000,24000,26000,28000,30000,32000,34000]
@@ -143,48 +143,45 @@ if __name__ == '__main__':
     if args.port is not None:
         config['system']['igt_port'] = args.port
 
+    flip_option = []
+    if args.flip is not None:
+        flip_option = list(args.flip)
     igt_option = args.igt
     print_option = args.print
-    flip_option = args.flip
 
-    printInfo()
-    printSettings(config)
+    # Print system info
+    print_info()
+    print_settings(config)
+
+    # Create an instance of the tracking system
+    anser = Anser(config)
+    # Initialise the tracking system DAQ
+    anser.start_acquisition()
+    anser.flipflags = flip_option
+
+    print("System Running")
+    print("Press Ctrl-C to exit...")
+
+    init1 = [0, 0, 0.2, 0, 0]
+    init2 = [0, 0, 0.2, 0, 0]
 
     try:
 
-        # Create an instance of the tracking system
-        anser = Anser(config)
-        # Initialise the tracking system DAQ
-        anser.start()
-        # Enable sensor flipping if needed. This should only be used for testing
-        # TODO: Modify this to accept a vector/dict of flip flags
-        anser.angleFlip(flip_option)
-        print("System Running")
-        print("Press Ctrl-C to exit...")
-
-        init1 = [0, 0, 0.2, 0, 0]
-        init2 = [0, 0, 0.2, 0, 0]
         while True:
 
             t = time()
-            anser.sampleUpdate()
+            anser.sample_update()
 
             anser.solver.conditions = init1
-            positionVector1 = anser.getPosition(1)
-            positionMatrix1 = anser.vec2mat5DOF(positionVector1)
+            positionVector1, positionMatrix1 = anser.get_position(1, igtname='Needle1')
             init1 = positionVector1
-            anser.igtSendTransform(positionMatrix1, device_name='Needle1')
 
             anser.solver.conditions = init2
-            positionVector2 = anser.getPosition(4)
-            positionMatrix2 = anser.vec2mat5DOF(positionVector2)
+            positionVector2, positionMatrix2 = anser.get_position(4, igtname='Needle2')
             init2 = positionVector2
-            anser.igtSendTransform(positionMatrix2, device_name='Needle2')
-
-            #if print_option == True:
-             #   anser.printPosition(positionVector)
 
     except KeyboardInterrupt:
+        anser.stop_acquisition()
         exit()
         pass
 

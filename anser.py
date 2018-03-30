@@ -20,6 +20,7 @@ class Anser():
         self.solver = Solver(self.cal, self.model, config['solver'])
 
         self.channels = config['system']['channels']
+        self.flipflags = []
 
         self.daq = Daq(config)
         self.filter = Filter(config)
@@ -32,7 +33,65 @@ class Anser():
         if config['system']['igt'] is True:
             self.igtconn = PyIGTLink(port=config['system']['igt_port'], localServer=config['system']['igt_local'])
 
-    def vec2mat5DOF(self, array=np.array(np.zeros([1,5]))):
+
+
+    def _igt_send_transform(self, mat, device_name=''):
+
+        matmsg = TransformMessage(mat, device_name=device_name)
+        self.igtconn.add_message_to_send_queue(matmsg)
+
+
+    def sample_update(self):
+        self.data = self.daq.getData()
+
+    def resolve_position(self, sensorNo):
+
+        magnitudes = self.filter.demodulateSignalRef(self.data, self.channels.index(sensorNo) + 1)
+        result = self.solver.solveLeastSquares(magnitudes)
+
+        # Wrap around angles to preserve constraints
+        wrapresult = self._angle_wrap(result)
+
+        self.solver.initialCond = wrapresult.x
+
+        return np.array(wrapresult.x)
+
+    def get_position(self, sensorNo, igtname=''):
+
+        self.solver.calibration = np.array(self.cal_dict[sensorNo])
+        position = self.resolve_position(sensorNo)
+        positionmat = self.vec_2_mat_5dof(position)
+
+        if self.igtconn is True:
+            igtposition = position
+            if str(sensorNo) in self.flipflags:
+                igtposition[4] = igtposition[4] + pi
+            igtmat = self.vec_2_mat_5dof(igtposition)
+            self._igt_send_transform(igtmat, igtname)
+
+        return position, positionmat
+
+    def start_acquisition(self):
+        self.daq.daqStart()
+
+    def stop_acquisition(self):
+        self.daq.daqStop()
+
+    @staticmethod
+    def print_position(position):
+        print('%0.4f %0.4f %0.4f %0.4f %0.4f'
+              % (position[0] * 1000, position[1] * 1000, position[2] * 1000, position[3], position[4]))
+
+    @staticmethod
+    def _angle_wrap(result):
+        if result.x[4] > 2*pi:
+            result.x[4] = result.x[4] - 2 * pi
+        elif result.x[4] < -2*pi:
+            result.x[4] = result.x[4] + 2 * pi
+        return result
+
+    @staticmethod
+    def vec_2_mat_5dof(self, array=np.array(np.zeros([1,5]))):
 
         mat = np.matrix([[np.cos(array[4])*np.cos(array[3]), -np.sin(array[4]), np.cos(array[4])*np.sin(array[3]), array[0]*1000],
                                     [np.sin(array[4])*np.cos(array[3]), np.cos(array[4]), np.sin(array[4])*np.sin(array[3]), array[1]*1000],
@@ -40,54 +99,10 @@ class Anser():
                                     [0, 0, 0, 1]])
         return mat
 
-    def vec2mat6DOF(self, array=np.array(np.zeros([1,6]))):
+    @staticmethod
+    def vec_2_mat_6dof(self, array=np.array(np.zeros([1,6]))):
 
         pass
 
-    def igtSendTransform(self, mat, device_name=''):
-
-        matmsg = TransformMessage(mat, device_name=device_name)
-        self.igtconn.add_message_to_send_queue(matmsg)
 
 
-    def sampleUpdate(self):
-        self.data = self.daq.getData()
-
-    def resolvePosition(self, sensorNo):
-
-        magnitudes = self.filter.demodulateSignalRef(self.data, sensorNo)
-        result = self.solver.solveLeastSquares(magnitudes)
-
-        # Wrap around angles to preserve constraints
-        wrapresult = self.angleWrap(result)
-
-        self.solver.initialCond = wrapresult.x
-
-        return np.array(wrapresult.x)
-
-    def getPosition(self, sensorNo):
-
-        self.solver.calibration = np.array(self.cal_dict[sensorNo])
-        position = self.resolvePosition(self.channels.index(sensorNo) + 1)
-
-        return position
-
-    def angleWrap(self, result):
-        if result.x[4] > 2*pi:
-            result.x[4] = result.x[4] - 2 * pi
-        elif result.x[4] < -2*pi:
-            result.x[4] = result.x[4] + 2 * pi
-        return result
-
-    def start(self):
-        self.daq.daqStart()
-
-    def stop(self):
-        self.daq.daqStop()
-
-    def printPosition(self, position):
-        print('%0.4f %0.4f %0.4f %0.4f %0.4f'
-              % (position[0] * 1000, position[1] * 1000, position[2] * 1000, position[3], position[4]))
-
-    def angleFlip(self, flag):
-        self.flipFlag = flag
