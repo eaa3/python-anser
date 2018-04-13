@@ -9,7 +9,7 @@ class CoilModel():
     # MUST BE DEFINED. A User defined function which returns the magnetic field intensity H at a point in space P.
     # This function must be defined as accepting a cartesian coordinate (x,y,z),
     # and returning a three magnetic intensity values Hx, Hy and Hz
-    def coil_field(self, Px, Py, Pz):
+    def coil_field_total(self, Px, Py, Pz):
         I = 1
         numPoints = self.xPoints.shape[1]
 
@@ -55,7 +55,51 @@ class CoilModel():
 
         return Hx, Hy, Hz
 
+    def coil_field_single(self, Px, Py, Pz, coilindex=0):
+        I = 1
+        numPoints = self.xPoints.shape[1]
 
+        # matrix conversions
+
+        xPoints = np.matrix(self.xPoints[coilindex, :])
+        yPoints = np.matrix(self.yPoints[coilindex, :])
+        zPoints = np.matrix(self.zPoints[coilindex, :])
+
+        ax = xPoints[:, 1:numPoints] - xPoints[:, 0:(numPoints - 1)]
+        ay = yPoints[:, 1:numPoints] - yPoints[:, 0:(numPoints - 1)]
+        az = zPoints[:, 1:numPoints] - zPoints[:, 0:(numPoints - 1)]
+
+        bx = xPoints[:, 1:numPoints] - Px
+        by = yPoints[:, 1:numPoints] - Py
+        bz = zPoints[:, 1:numPoints] - Pz
+
+        cx = xPoints[:, 0:(numPoints - 1)] - Px
+        cy = yPoints[:, 0:(numPoints - 1)] - Py
+        cz = zPoints[:, 0:(numPoints - 1)] - Pz
+
+        cMag = np.sqrt(np.square(cx) + np.square(cy) + np.square(cz))
+        bMag = np.sqrt(np.square(bx) + np.square(by) + np.square(bz))
+
+        aDotb = np.multiply(ax, bx) + np.multiply(ay, by) + np.multiply(az, bz)
+        aDotc = np.multiply(ax, cx) + np.multiply(ay, cy) + np.multiply(az, cz)
+
+        cCrossa_x = np.multiply(az, cy) - np.multiply(ay, cz)
+        cCrossa_y = np.multiply(ax, cz) - np.multiply(az, cx)
+        cCrossa_z = np.multiply(ay, cx) - np.multiply(ax, cy)
+
+        cCrossa_Mag_Squared = np.square(cCrossa_x) + np.square(cCrossa_y) + np.square(cCrossa_z)
+
+        scalar = np.divide((np.divide(aDotc, cMag) - np.divide(aDotb, bMag)), cCrossa_Mag_Squared)
+
+        Hx_dum = (I / (4 * np.pi)) * np.multiply(cCrossa_x, scalar)
+        Hy_dum = (I / (4 * np.pi)) * np.multiply(cCrossa_y, scalar)
+        Hz_dum = (I / (4 * np.pi)) * np.multiply(cCrossa_z, scalar)
+
+        Hx = np.sum(Hx_dum, axis=1)
+        Hy = np.sum(Hy_dum, axis=1)
+        Hz = np.sum(Hz_dum, axis=1)
+
+        return Hx, Hy, Hz
 
 
 # Function used to define the dimensions of each coil in the square coil model

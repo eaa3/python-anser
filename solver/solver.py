@@ -20,6 +20,9 @@ class Solver():
         # Matrix of calibration values
         self.calibration = calibration
 
+        # Initial conditions for the calibration routine
+        self.calinit = [0, 1]
+
         # Variables to hold results of the solver
         self.result = np.zeros(self.conditions.shape[0])
         self.resCost = 0
@@ -29,11 +32,21 @@ class Solver():
 
     def solveLeastSquares(self, flux):
 
-
-        result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
-                               args=(flux, self.calibration, self.modelObject),
-                                     jac=self.jac, bounds=self.bounds, method=self.method,
-                                     ftol=self.ftol, xtol=self.xtol,
-                                     gtol=self.gtol, verbose=self.verbosity)
+        if self.method.upper() == 'TRF':
+            result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+                                   args=(flux, self.calibration, self.modelObject),
+                                         jac=self.jac, bounds=self.bounds, method=self.method,
+                                         ftol=self.ftol, xtol=self.xtol,
+                                         gtol=self.gtol, verbose=self.verbosity)
+            return result
+        elif self.method.upper() == 'LM':
+            result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+                                   args=(flux, self.calibration, self.modelObject),
+                                   jac=self.jac, method=self.method,
+                                   ftol=self.ftol, xtol=self.xtol,
+                                   gtol=self.gtol, verbose=self.verbosity)
+            return result
+        else:
+            exit('Unrecognised solving algorithm type; Levenburg-Marquardt (LM) and trust-region (TRF) are supported')
+            result = 0
         return result
-

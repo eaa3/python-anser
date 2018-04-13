@@ -176,9 +176,10 @@ if __name__ == '__main__':
             positionVector1, positionMatrix1 = anser.get_position(1, igtname='Needle1')
             init1 = positionVector1
 
-            anser.solver.conditions = init2
-            positionVector2, positionMatrix2 = anser.get_position(4, igtname='Needle2')
-            init2 = positionVector2
+            #anser.print_position(positionVector1)
+            #anser.solver.conditions = init2
+            #positionVector2, positionMatrix2 = anser.get_position(4, igtname='Needle2')
+            #init2 = positionVector2
 
     except KeyboardInterrupt:
         anser.stop_acquisition()

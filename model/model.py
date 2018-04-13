@@ -5,7 +5,8 @@ class MagneticModel():
 
 
     def __init__(self, model_config):
-        model_name = model_config['model_name']
+        self.model_name = model_config['model_name']
+        self.numcoils = model_config['num_coils']
 
         # Import functions for coil model calculations
         # self.mod = importlib.import_module(model_name)
@@ -14,8 +15,16 @@ class MagneticModel():
         self.coil_model = self.mod.CoilModel(model_config)
 
 
+    # Get the field intensity from ALL transmitter coils at a single point in space
     def getField(self, p=np.array([0,0,0])):
 
-        Hx, Hy, Hz = self.coil_model.coil_field(p[0], p[1], p[2])
+        Hx, Hy, Hz = self.coil_model.coil_field_total(p[0], p[1], p[2])
+
+        return Hx, Hy, Hz
+
+    # Get the field intensity due to a SINGLE transmitter coil at a single point in space
+    def getFieldSingle(self, p=np.array([0,0,0]), coilindex=0):
+
+        Hx, Hy, Hz = self.coil_model.coil_field_single(p[0], p[1], p[2], coilindex)
 
         return Hx, Hy, Hz

@@ -47,6 +47,8 @@ class Anser():
     def resolve_position(self, sensorNo):
 
         magnitudes = self.filter.demodulateSignalRef(self.data, self.channels.index(sensorNo) + 1)
+
+        f = np.array(magnitudes)
         result = self.solver.solveLeastSquares(magnitudes)
 
         # Wrap around angles to preserve constraints
@@ -62,12 +64,13 @@ class Anser():
         position = self.resolve_position(sensorNo)
         positionmat = self.vec_2_mat_5dof(position)
 
-        if self.igtconn is True:
-            igtposition = position
+        if self.igtconn is not None:
+            igtposition = position.copy()
             if str(sensorNo) in self.flipflags:
-                igtposition[4] = igtposition[4] + pi
+                igtposition[3] = igtposition[3] + pi
             igtmat = self.vec_2_mat_5dof(igtposition)
             self._igt_send_transform(igtmat, igtname)
+
 
         return position, positionmat
 
@@ -91,7 +94,7 @@ class Anser():
         return result
 
     @staticmethod
-    def vec_2_mat_5dof(self, array=np.array(np.zeros([1,5]))):
+    def vec_2_mat_5dof(array):
 
         mat = np.matrix([[np.cos(array[4])*np.cos(array[3]), -np.sin(array[4]), np.cos(array[4])*np.sin(array[3]), array[0]*1000],
                                     [np.sin(array[4])*np.cos(array[3]), np.cos(array[4]), np.sin(array[4])*np.sin(array[3]), array[1]*1000],

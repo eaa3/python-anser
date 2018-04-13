@@ -27,3 +27,28 @@ def objectiveCoilSquareCalc3D(currentPandO, fluxSense, calibration, model):
     out = np.ndarray.flatten(out)
 
     return out
+
+def objectiveScalingOffsetZ(parameters, calfield, coilindex, model, calpoints):
+
+    zoffset = parameters[0]
+    bscale = parameters[1]
+
+    numpoints = len(calpoints[0])
+
+    x = calpoints[0]
+    y = calpoints[1]
+    z = calpoints[2] - zoffset
+
+    Hx = np.zeros([numpoints, ])
+    Hy = np.zeros([numpoints, ])
+    Hz = np.zeros([numpoints, ])
+
+    for i in range(numpoints):
+        Hx[i], Hy[i], Hz[i] = model.getFieldSingle([x[i], y[i], z[i]], coilindex)
+
+
+    Bz = u0 * Hz * bscale
+
+    deltaB = calfield - np.transpose(Bz)
+
+    return deltaB.flatten()

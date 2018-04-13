@@ -5,7 +5,6 @@ system:
   device_name: Dev1
   channels:
     - 1
-    - 4
   serial_name: COM1
   igt: True
   igt_port: 18944
@@ -108,7 +107,7 @@ solver:
     - 0.5                 # z
     - 3.14159265359       # Theta (elevation)
     - 9.42477796077       # Phi (azimuthal)
-  method: trf             # Solving method
+  method: trf            # Solving method
   ftol: 2.3e-14
   xtol: 1e-6
   gtol: 2.3e-16
