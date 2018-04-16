@@ -12,6 +12,7 @@ system:
   update_delay: 0.01
   print: False
   flip_enable: False
+  flip_list:
 
 pinmap:
   anser:
@@ -72,7 +73,7 @@ model:
 # Filter settings parameters
 filter:
   num_freqs: 8
-  num_samples: 250
+  num_samples: 5000
   sampling_freq: 1e5
   cutoff_freq: 1e-5
   attenuation: 200 # dB

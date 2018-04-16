@@ -1,12 +1,10 @@
 from anser import Anser
+from calibration.calibration import Calibration
+from time import sleep, time
+import ast
+import argparse
 import numpy as np
-from time import time
-
-
-# Simple object for storing all command arguments
-class optionContainer(object):
-    pass
-
+from utils.settings import get_settings
 
 # Miscellaneous functions.
 def print_info():
@@ -16,6 +14,7 @@ def print_info():
     print('Copyright (c) 2017, Alex Jaeger, Kilian O\'Donoghue')
     print('All rights reserved.')
     print('This code is licensed under the BSD 3-Clause License.\n\n')
+
 
 def print_settings(config):
 
@@ -61,18 +60,12 @@ def print_settings(config):
     print('')
 
 
-
-
 if __name__ == '__main__':
-
-    from time import sleep
-    import ast
-    import argparse
-    from utils.settings import get_settings
 
     config = get_settings()
 
-    parser = argparse.ArgumentParser(description='Settings for the Anser EMT system. If no settings are provided then tracking for sensor channel 1 will begin.')
+    parser = argparse.ArgumentParser(description='Settings for the Anser EMT system. If no settings are provided then'
+                                                 ' tracking using the defauly config file with begin')
     parser.add_argument('-s', '--sensors', help='A list of sensors to track')
     parser.add_argument('-i', '--igt', action='store_true', help='Enable an OpenIGTLink transform server. A seperate '
                                                                  'connection will be created for each sensor', default=True)
@@ -101,13 +94,10 @@ if __name__ == '__main__':
                         help='The port used to host the server (default=18944)')
     parser.add_argument('-fl', '--flip', help='Flip the orientation of the 5-DOF sensor',
                         action='append', required=False)
-
-    # Default system frequencies.
-    default_freqs = [20000,22000,24000,26000,28000,30000,32000,34000]
+    parser.add_argument('--calibrate', action='store_true', help='Perform calibration', default=False)
 
     # Parse all arguments
     args = parser.parse_args()
-    options = optionContainer()
 
     if args.sensors is not None:
         config['system']['channels'] = ast.literal_eval(args.sensors)
@@ -149,42 +139,64 @@ if __name__ == '__main__':
     igt_option = args.igt
     print_option = args.print
 
-    # Print system info
     print_info()
-    print_settings(config)
 
-    # Create an instance of the tracking system
-    anser = Anser(config)
-    # Initialise the tracking system DAQ
-    anser.start_acquisition()
-    anser.flipflags = flip_option
 
-    print("System Running")
-    print("Press Ctrl-C to exit...")
+    if args.calibrate == True:
 
-    init1 = [0, 0, 0.2, 0, 0]
-    init2 = [0, 0, 0.2, 0, 0]
+        sensorNo = int(input('\n Enter sensor id to calibrate: '))
+        anser = Anser(config)
+        cal = Calibration('7x7', anser.model)
+        cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
 
-    try:
 
-        while True:
-
-            t = time()
+        anser.start_acquisition()
+        for i in range(cal.numPoints):
+            print('Point %d' % (i + 1), '...')
+            input('')
             anser.sample_update()
-
-            anser.solver.conditions = init1
-            positionVector1, positionMatrix1 = anser.get_position(1, igtname='Needle1')
-            init1 = positionVector1
-
-            #anser.print_position(positionVector1)
-            #anser.solver.conditions = init2
-            #positionVector2, positionMatrix2 = anser.get_position(4, igtname='Needle2')
-            #init2 = positionVector2
-
-    except KeyboardInterrupt:
-        anser.stop_acquisition()
-        exit()
+            cal.fieldData[:, i] = np.column_stack(anser.filter.demodulateSignalRef(anser.data, sensorNo))
         pass
+        anser.stop_acquisition()
+
+        print('Calibrating...')
+        result = cal.calibrateZ()
+        print('Done\n')
+    else:
+
+        # Print system info
+        print_settings(config)
+
+        # Create an instance of the tracking system
+        anser = Anser(config)
+        # Initialise the tracking system DAQ
+        anser.start_acquisition()
+        anser.flipflags = flip_option
+
+        print("System Running")
+        print("Press Ctrl-C to exit...")
+
+        delay = config['system']['update_delay']
+
+
+        try:
+
+            while True:
+
+                sleep(delay)
+                t = time()
+                anser.sample_update()
+                positionVector1, positionMatrix1 = anser.get_position(1, igtname='Needle1')
+
+
+
+        except KeyboardInterrupt:
+            anser.stop_acquisition()
+            exit()
+            pass
+
+
+
 
 
 

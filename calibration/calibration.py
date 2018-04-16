@@ -2,19 +2,23 @@ from model.constants import u0, pi
 import numpy as np
 from scipy.optimize import least_squares
 from solver.objective import objectiveScalingOffsetZ
-from utils.settings import get_calibration
+from utils.settings import get_calibration, get_settings
+from anser import Anser
 
 class Calibration():
 
-    def __init__(self, caltype, model, calfield):
+    def __init__(self, caltype, model):
 
         self.model = model
-        self.calfield = calfield
         self.caltype = caltype
         self.calarray = get_calibration()
 
+        self.numCoils = self.model.numcoils
+        self.fieldData = np.array([])
+
         if self.caltype.upper() == 'DUPLO':
             # These values can be edited depending on the setup
+            self.numPoints = 49
             blockno = 5
             calsensorposition = 0.5
 
@@ -38,6 +42,8 @@ class Calibration():
         elif self.caltype.upper() == '9X9':
 
             # Calibration points for Anser v1 using the 9x9 calibration grid
+            self.numPoints = 81
+
             spacing = (100 / 3) * 1e-3
             probeheight = 80e-3
 
@@ -54,6 +60,9 @@ class Calibration():
         elif caltype.upper() == '7X7':
 
             # Calibration points for Anser v1 using the 9x9 calibration grid
+            self.numPoints = 49
+
+
             spacing = 42.86 * 1e-3
             probeheight = 72.2e-3
 
@@ -65,8 +74,7 @@ class Calibration():
 
             boardDepth = 0# 4e-3
             self.z = ((boardDepth + probeheight)) * np.ones((49,))
-
-
+        self.fieldData = np.zeros([self.numCoils, self.numPoints])
 
     def calibrateZ(self):
 
@@ -95,7 +103,7 @@ class Calibration():
         # Iterate over each coil and calculate the scaling factors of each.
         for i in range(numcoils):
 
-            result = least_squares(objectiveScalingOffsetZ, estimate, args=(self.calfield[i, :], i, self.model, calpoints),
+            result = least_squares(objectiveScalingOffsetZ, estimate, args=(self.fieldData[i, :], i, self.model, calpoints),
                                    jac='3-point', method='trf', ftol=2.3e-14,
                                    xtol=1e-6, gtol=2.3e-16, verbose=0)
 
@@ -108,8 +116,6 @@ class Calibration():
 
 
 if __name__ == '__main__':
-
-    import scipy.io as sio
 
     # Test field data for proving the correctness of the calibration routine.
     dict = sio.loadmat('BStore1.mat')

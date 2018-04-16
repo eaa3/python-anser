@@ -131,6 +131,6 @@ class Filter():
 
         fluxSign = np.sign(phaseDiff)
         signedFlux = np.multiply(fluxSign, magResult[1, :])
-        signedFlux = np.divide(signedFlux, np.ones([1,8]) * mag_scale)
+        signedFluxScaled = np.divide(signedFlux, np.ones([1,8]) * mag_scale)
 
-        return np.transpose(signedFlux)
+        return np.transpose(signedFluxScaled)
