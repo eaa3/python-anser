@@ -197,9 +197,11 @@ if __name__ == '__main__':
             while True:
 
                 sleep(delay)
-                t = time()
+
                 anser.sample_update()
                 positionVector1, positionMatrix1 = anser.get_position(1, igtname='Needle1')
+
+                anser.print_position(positionVector1)
 
 
 

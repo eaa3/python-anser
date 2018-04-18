@@ -45,7 +45,12 @@ class Solver():
                                    jac=self.jac, method=self.method,
                                    ftol=self.ftol, xtol=self.xtol,
                                    gtol=self.gtol, verbose=self.verbosity)
-            return result
+        elif self.method.upper() == 'DOGBOX':
+            result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+                                   args=(flux, self.calibration, self.modelObject),
+                                   jac=self.jac, bounds=self.bounds, method=self.method,
+                                   ftol=self.ftol, xtol=self.xtol,
+                                   gtol=self.gtol, verbose=self.verbosity)
         else:
             exit('Unrecognised solving algorithm type; Levenburg-Marquardt (LM) and trust-region (TRF) are supported')
             result = 0
