@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Settings for the Anser EMT system. If no settings are provided then'
                                                  ' tracking using the defauly config file with begin')
-    parser.add_argument('-s', '--sensors', help='A list of sensors to track')
+    parser.add_argument('-s', '--sensors', action='append', help='A list of sensors to track')
     parser.add_argument('-i', '--igt', action='store_true', help='Enable an OpenIGTLink transform server. A seperate '
                                                                  'connection will be created for each sensor', default=True)
     parser.add_argument('-fs', '--frequencysample', type=int,
@@ -100,10 +100,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.sensors is not None:
-        config['system']['channels'] = ast.literal_eval(args.sensors)
+        config['system']['channels'] = list(int(i) for i in args.sensors)
 
     if args.frequencies is not None:
-        config['filter']['freqs'] = ast.literal_eval(args.frequencies)
+        config['filter']['freqs'] = list(args.frequencies)
 
     if args.frequencysample is not None:
         config['filter']['sampling_freq'] = args.frequencysample
@@ -196,14 +196,17 @@ if __name__ == '__main__':
 
             while True:
 
+                # Delay according to desired refresh rate
                 sleep(delay)
 
+                # Update the sample data for all sensor channels
                 anser.sample_update()
-                positionVector1, positionMatrix1 = anser.get_position(1, igtname='Needle1')
 
-                anser.print_position(positionVector1)
-
-
+                # Iterate through each sensor  data channel and solve for each position.
+                for sensorNo in config['system']['channels']:
+                    positionVector1, positionMatrix1 = anser.get_position(sensorNo, igtname='Pointer_' + str(sensorNo))
+                    if print_option == True:
+                        anser.print_position(positionVector1)
 
         except KeyboardInterrupt:
             anser.stop_acquisition()
