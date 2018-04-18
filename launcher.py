@@ -145,10 +145,10 @@ if __name__ == '__main__':
     if args.calibrate == True:
 
         sensorNo = int(input('\nEnter sensor id to calibrate: '))
+        config['system']['channels'] = sensorNo
         anser = Anser(config)
         cal = Calibration('7x7', anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
-
 
         anser.start_acquisition()
         for i in range(cal.numPoints):
