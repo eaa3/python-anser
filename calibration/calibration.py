@@ -113,6 +113,7 @@ class Calibration():
         cals = np.array(cals) * np.sign(np.cos(sensorOrientation))
 
         print(cals)
+        return cals
 
 
 if __name__ == '__main__':

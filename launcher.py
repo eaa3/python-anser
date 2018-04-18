@@ -4,7 +4,7 @@ from time import sleep, time
 import ast
 import argparse
 import numpy as np
-from utils.settings import get_settings
+from utils.settings import *
 
 # Miscellaneous functions.
 def print_info():
@@ -141,10 +141,10 @@ if __name__ == '__main__':
 
     print_info()
 
-
+    # If calibration is requested, run the calibration procedure
     if args.calibrate == True:
 
-        sensorNo = int(input('\n Enter sensor id to calibrate: '))
+        sensorNo = int(input('\nEnter sensor id to calibrate: '))
         anser = Anser(config)
         cal = Calibration('7x7', anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
@@ -161,7 +161,20 @@ if __name__ == '__main__':
 
         print('Calibrating...')
         result = cal.calibrateZ()
+        scalers = result[:, 1]
         print('Done\n')
+
+        file_save = input('Do you wish to save this calibration to calibration.yaml? [Y/n]: ')
+        yes_state = ['Y', 'YE', 'YES']
+        if file_save.upper() in yes_state:
+            cal_contents = get_calibration()
+            cal_contents[sensorNo] = [float(i) for i in scalers]
+            write_calibration(cal_contents, 'calibration.yaml')
+            print('Saved.\n')
+        else:
+            pass
+        print('Calibration complete.')
+    # Else runt the system as normal
     else:
 
         # Print system info

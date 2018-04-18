@@ -43,3 +43,13 @@ def get_calibration(filename='calibration.yaml'):
     cals = import_settings_file(filename)
 
     return cals
+
+def write_calibration(cals, filename='calibration.yaml'):
+
+    with open(filename, 'w') as stream:
+        try:
+            ruamel_yaml.dump(cals, stream)
+            return 0
+        except ruamel_yaml.YAMLError as exc:
+            print(exc)
+            return 1
