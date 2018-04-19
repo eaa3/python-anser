@@ -5,7 +5,7 @@ def import_settings_file(filename='config.yaml'):
 
     with open(filename, 'r') as stream:
         try:
-            settings_dict = ruamel_yaml.load(stream)
+            settings_dict = ruamel_yaml.load(stream, Loader=ruamel_yaml.Loader)
             stream.close()
             return settings_dict
         except ruamel_yaml.YAMLError as exc:
