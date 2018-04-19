@@ -33,7 +33,7 @@ class Daq():
 
     def resetDaq(self):
         if self.daqType.upper() == 'NIDAQ':
-            self._DAQTask.resetDevice()
+            self._DAQTask.ClearTask()
             self._DAQTask = nidaq(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
 
     def daqStart(self):
