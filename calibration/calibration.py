@@ -2,10 +2,10 @@ from model.constants import u0, pi
 import numpy as np
 from scipy.optimize import least_squares
 from solver.objective import objectiveScalingOffsetZ
-from utils.settings import get_calibration, get_settings
-from anser import Anser
+from utils.settings import get_calibration
 
-class Calibration():
+
+class Calibration:
 
     def __init__(self, caltype, model):
 
@@ -22,9 +22,7 @@ class Calibration():
             blockno = 5
             calsensorposition = 0.5
 
-            calTowerBlocks = blockno + calsensorposition
             BlockHeight = 19.2
-
 
             calTowerBlocks = blockno + calsensorposition
 
@@ -50,12 +48,12 @@ class Calibration():
             x = np.array(np.linspace(-4, 4, 9)) * spacing
 
             self.x = np.array(np.concatenate((x, x, x, x, x, x, x, x, x)))
-            self.y = np.array(np.concatenate((np.ones((1, 9))*spacing*4, np.ones((1, 9))*spacing*3,  np.ones((1, 9))*spacing*2, np.ones((1, 9))*spacing*1,
-                 np.ones((1, 9))*0, -np.ones((1, 9))*spacing*1, -np.ones((1, 9))*spacing*2, -np.ones((1, 9))*spacing*3,
-                 -np.ones(1, 9)*spacing*4)))
+            self.y = np.array(np.concatenate((np.ones((9,))*spacing*4, np.ones((9,))*spacing*3,  np.ones((9,))*spacing*2, np.ones((9,))*spacing*1,
+                 np.ones((9,))*0, -np.ones((9,))*spacing*1, -np.ones((9,))*spacing*2, -np.ones((9,))*spacing*3,
+                 -np.ones((9,))*spacing*4)))
 
             boardDepth = 4e-3
-            self.z = ((boardDepth + probeheight)) * np.ones(1, 81)
+            self.z = ((boardDepth + probeheight)) * np.ones((self.numPoints,))
 
         elif caltype.upper() == '7X7':
 
@@ -73,7 +71,7 @@ class Calibration():
                  -np.ones((7,))*spacing*1, -np.ones((7,))*spacing*2, -np.ones((7,))*spacing*3)))
 
             boardDepth = 0# 4e-3
-            self.z = ((boardDepth + probeheight)) * np.ones((49,))
+            self.z = ((boardDepth + probeheight)) * np.ones((self.numPoints,))
         self.fieldData = np.zeros([self.numCoils, self.numPoints])
 
     def calibrateZ(self):
@@ -114,11 +112,3 @@ class Calibration():
 
         print(cals)
         return cals
-
-
-if __name__ == '__main__':
-
-    # Test field data for proving the correctness of the calibration routine.
-    dict = sio.loadmat('BStore1.mat')
-    mat = dict['BStore']
-    print(mat)

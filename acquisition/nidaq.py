@@ -6,7 +6,7 @@ import threading
 import platform
 
 
-class nidaq(Task):
+class NIDAQ(Task):
     def __init__(self, dev_name='Dev1', channels=np.array([0]), data_len=1000, sampleFreq=100000.0, contSample=True):
         Task.__init__(self)
         if dev_name is None:
@@ -73,7 +73,7 @@ if __name__=="__main__":
     sampleFreq = 100000
     noSamples = 1000
     deviceID = 'Dev3'
-    task = nidaq(dev_name=deviceID,channels=channels, sampleFreq=sampleFreq, data_len=noSamples)
+    task = NIDAQ(dev_name=deviceID,channels=channels, sampleFreq=sampleFreq, data_len=noSamples)
     task.StartTask()
 
     print("Acquiring 10 * 1000 samples in continuous mode.")

@@ -1,7 +1,7 @@
 from utils.settings import get_settings, get_calibration
 from model.model import MagneticModel
 from solver.solver import Solver
-from acquisition.daq import Daq
+from acquisition.daq import DAQ
 from filter.filter import Filter
 from pyIGTLink.pyIGTLink import *
 from pyIGTLink.tests import *
@@ -27,7 +27,7 @@ class Anser():
         self.flipflags = config['system']['flip_list']
 
         # Define DAQ and Filter objects with their associated configuration
-        self.daq = Daq(config)
+        self.daq = DAQ(config)
         self.filter = Filter(config)
 
         # Declare storage for sample data and field strengths

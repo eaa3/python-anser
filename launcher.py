@@ -1,5 +1,6 @@
 from anser import Anser
 from calibration.calibration import Calibration
+import platform
 from time import sleep, time
 import ast
 import argparse
@@ -147,10 +148,15 @@ if __name__ == '__main__':
         sensorNo = int(input('\nEnter sensor id to calibrate: '))
         config['system']['channels'] = [sensorNo]
         anser = Anser(config)
-        cal = Calibration('7x7', anser.model)
+        cal = Calibration(config['system']['device_cal'], anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
 
-        anser.daq.setContSamps(False)
+        if platform.system() == 'Windows':
+            anser.daq.setContSamps(True)
+        else:
+            anser.daq.setContSamps(False)
+
+
         anser.daq.resetDaq()
         anser.start_acquisition()
         for i in range(cal.numPoints):

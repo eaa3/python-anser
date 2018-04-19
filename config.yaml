@@ -2,6 +2,7 @@
 system:
   system_version: anser
   device_type: nidaq
+  device_cal: 7x7
   device_name: Dev1
   channels:
     - 1

@@ -1,9 +1,12 @@
 import numpy as np
-from acquisition.nidaq import nidaq
+from acquisition.nidaq import NIDAQ
 
-class Daq():
+
+class DAQ:
 
     def __init__(self, config):
+
+        # Extract the system parameters
         self.daqType = config['system']['device_type']
         self.daqName = config['system']['device_name']
         self.daqChannels = config['system']['channels']
@@ -24,31 +27,40 @@ class Daq():
         self._DAQTask = 0
 
         if self.daqType.upper() == 'NIDAQ':
-            self._DAQTask = nidaq(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
+            self._DAQTask = NIDAQ(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
 
+    # A flag to set how the DAQ performs its sampling operations
+    # The DAQ task must be reset using resetDaq() for changes to take effect
     def setContSamps(self, flag):
         if flag is True or flag is False:
             self.contSamps = flag
 
-
+    # Reset the DAQ and reinitialise the task to take into account any parameter changes.
     def resetDaq(self):
         if self.daqType.upper() == 'NIDAQ':
             self._DAQTask.ClearTask()
-            self._DAQTask = nidaq(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
+            self._DAQTask = NIDAQ(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
 
+    # Start the DAQ task. Only called when using continuous sampling
     def daqStart(self):
 
-        # Only need to start the task if sampling is continuous
+        # Only need to start the continuous task if sampling is continuous.
+        # When using finite sampling, the getData() function will call the task starting function on each iteration
         if self.contSamps is True:
             if self.daqType.upper() == 'NIDAQ':
                 self._DAQTask.StartTask()
 
+    # Stop the current DAQ task
     def daqStop(self):
         if self.daqType.upper() == 'NIDAQ':
             self._DAQTask.StopTask()
 
+    # Retrieve data from the DAQ
     def getData(self):
+
+        # DAQ task must be called each time when using finite sampling
         if self.contSamps is False:
             self._DAQTask.StartTask()
-        p = self._DAQTask.get_data_matrix()
-        return p
+
+        # Retrieve the data from the DAQ in matrix form, where each column corresponds to an analog channel
+        return self._DAQTask.get_data_matrix()
