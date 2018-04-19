@@ -9,6 +9,8 @@ class Daq():
         self.daqChannels = config['system']['channels']
         self.pinMap = config['pinmap'][config['system']['system_version']]
 
+        self.contSamps = True
+
         # Stores the daq device specific pinout corresponding to the selected channels
         self.daqPins = []
         # Coil current sense channel iis defined as channel 0, and is always the first in the list.
@@ -22,13 +24,28 @@ class Daq():
         self._DAQTask = 0
 
         if self.daqType.upper() == 'NIDAQ':
-            self._DAQTask = nidaq(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq)
+            self._DAQTask = nidaq(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
+
+    def setContSamps(self, flag):
+        if flag is True or flag is False:
+            self.contSamps = flag
+
+
+    def resetDaq(self):
+        if self.daqType.upper() == 'NIDAQ':
+            self._DAQTask.resetDevice()
+            self._DAQTask = nidaq(self.daqName, np.array(self.daqPins), self.numSamples, self.sampFreq, self.contSamps)
 
     def daqStart(self):
-        self._DAQTask.StartTask()
+
+        # Only need to start the task if sampling is continuous
+        if self.contSamps is True:
+            if self.daqType.upper() == 'NIDAQ':
+                self._DAQTask.StartTask()
 
     def daqStop(self):
-        self._DAQTask.StopTask()
+        if self.daqType.upper() == 'NIDAQ':
+            self._DAQTask.StopTask()
 
     def getData(self):
         p = self._DAQTask.get_data_matrix()

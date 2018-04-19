@@ -145,11 +145,13 @@ if __name__ == '__main__':
     if args.calibrate == True:
 
         sensorNo = int(input('\nEnter sensor id to calibrate: '))
-        config['system']['channels'] = sensorNo
+        config['system']['channels'] = [sensorNo]
         anser = Anser(config)
         cal = Calibration('7x7', anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
 
+        anser.daq.setContSamps(True)
+        anser.daq.resetDaq()
         anser.start_acquisition()
         for i in range(cal.numPoints):
             print('Point %d' % (i + 1), '...')
@@ -165,7 +167,7 @@ if __name__ == '__main__':
         print('Done\n')
 
         file_save = input('Do you wish to save this calibration to calibration.yaml? [Y/n]: ')
-        yes_state = ['Y', 'YE', 'YES']
+        yes_state = ['', 'Y', 'YE', 'YES']
         if file_save.upper() in yes_state:
             cal_contents = get_calibration()
             cal_contents[sensorNo] = [float(i) for i in scalers]
@@ -174,7 +176,7 @@ if __name__ == '__main__':
         else:
             pass
         print('Calibration complete.')
-    # Else runt the system as normal
+    # Else run the system as normal
     else:
 
         # Print system info
