@@ -48,5 +48,7 @@ class Daq():
             self._DAQTask.StopTask()
 
     def getData(self):
+        if self.contSamps is False:
+            self._DAQTask.StartTask()
         p = self._DAQTask.get_data_matrix()
         return p
