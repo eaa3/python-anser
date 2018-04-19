@@ -150,7 +150,7 @@ if __name__ == '__main__':
         cal = Calibration('7x7', anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
 
-        anser.daq.setContSamps(True)
+        anser.daq.setContSamps(False)
         anser.daq.resetDaq()
         anser.start_acquisition()
         for i in range(cal.numPoints):
