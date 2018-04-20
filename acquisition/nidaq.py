@@ -1,3 +1,5 @@
+""" Class definition for national instruments data acquisition system"""
+
 from PyDAQmx import *
 from numpy import zeros
 import numpy as np
@@ -7,6 +9,9 @@ import platform
 
 
 class NIDAQ(Task):
+    """
+    Class definition for national instruments data acquisition system
+    """
     def __init__(self, dev_name='Dev1', channels=np.array([0]), data_len=1000, sampleFreq=100000.0, contSample=True):
         Task.__init__(self)
         if dev_name is None:

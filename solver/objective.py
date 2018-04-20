@@ -1,7 +1,8 @@
 import numpy as np
 from model.constants import u0
 
-def objectiveCoilSquareCalc3D(currentPandO, fluxSense, calibration, model):
+
+def objectiveSolve(currentPandO, fluxSense, calibration, model):
     x = currentPandO[0]
     y = currentPandO[1]
     z = currentPandO[2]
@@ -28,7 +29,7 @@ def objectiveCoilSquareCalc3D(currentPandO, fluxSense, calibration, model):
 
     return out
 
-def objectiveScalingOffsetZ(parameters, calfield, coilindex, model, calpoints):
+def objectiveCalibrate(parameters, calfield, coilindex, model, calpoints):
 
     zoffset = parameters[0]
     bscale = parameters[1]

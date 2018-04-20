@@ -1,6 +1,9 @@
+"""Class definition for communication with the EM Tracker microcontroller"""
+
 import serial
 
-class Mcu():
+
+class MCU:
 
     def __init__(self, portname):
         self.portname = portname

@@ -1,3 +1,8 @@
+"""
+Class definition for generic data acquisition system, designed to wrap over vendor specific APIs
+Currently only NI-DAQ is supported
+"""
+
 import numpy as np
 from acquisition.nidaq import NIDAQ
 

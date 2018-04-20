@@ -1,3 +1,5 @@
+""" Class definition for Anser EMT system"""
+
 from utils.settings import get_settings, get_calibration
 from model.model import MagneticModel
 from solver.solver import Solver
@@ -8,9 +10,10 @@ from pyIGTLink.tests import *
 from model.constants import pi
 
 
-
-class Anser():
-
+class EMTracker:
+    """
+    Class definition for Anser EMT system
+    """
     def __init__(self, config):
 
         # Load the system calibration values from the calibration file.
@@ -39,22 +42,23 @@ class Anser():
         if config['system']['igt'] is True:
             self.igtconn = PyIGTLink(port=config['system']['igt_port'], localServer=config['system']['igt_local'])
 
-    # Start the DAQ acquisition background process
     def start_acquisition(self):
+        """Start the DAQ acquisition background process"""
         self.daq.daqStart()
 
-    # Stop the DAQ acquisition background process
     def stop_acquisition(self):
+        """Stop the DAQ acquisition background process"""
         self.daq.daqStop()
 
-    # Retrieve new samples from the buffer. Sample data for each channel is obtained and stored simultaneously.
-    # Due to driver limitations, it is important that this function be called as often as possible on Linux and Mac
-    # operation systems
     def sample_update(self):
+        """Retrieve new samples from the buffer. Sample data for each channel is obtained and stored simultaneously.
+        Due to driver limitations, it is important that this function be called as often as possible on Linux and Mac
+        operation systems"""
         self.data = self.daq.getData()
 
-    # Wrapper to include igt connection
+    #
     def get_position(self, sensorNo, igtname=''):
+        """Wrapper to include igt connection"""
 
         # Set the solver to use the corresponding sensor calibration
         self.solver.calibration = np.array(self.cal_dict[sensorNo])

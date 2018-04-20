@@ -1,4 +1,6 @@
-from anser import Anser
+""" Launcher script to run the Anser EMT system"""
+
+from emtracker import EMTracker
 from calibration.calibration import Calibration
 import platform
 from time import sleep, time
@@ -95,7 +97,10 @@ if __name__ == '__main__':
                         help='The port used to host the server (default=18944)')
     parser.add_argument('-fl', '--flip', help='Flip the orientation of the 5-DOF sensor',
                         action='append', required=False)
+    parser.add_argument('--solver', type=str,
+                        help='Type of solving algorithm to use (lm, trf, dogbox)')
     parser.add_argument('--calibrate', action='store_true', help='Perform calibration', default=False)
+
 
     # Parse all arguments
     args = parser.parse_args()
@@ -134,6 +139,9 @@ if __name__ == '__main__':
     if args.port is not None:
         config['system']['igt_port'] = args.port
 
+    if args.solver is not None:
+        config['solver']['method'] = args.solver
+
     flip_option = []
     if args.flip is not None:
         flip_option = list(args.flip)
@@ -147,7 +155,7 @@ if __name__ == '__main__':
 
         sensorNo = int(input('\nEnter sensor id to calibrate: '))
         config['system']['channels'] = [sensorNo]
-        anser = Anser(config)
+        anser = EMTracker(config)
         cal = Calibration(config['system']['device_cal'], anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
 
@@ -159,12 +167,13 @@ if __name__ == '__main__':
 
         anser.daq.resetDaq()
         anser.start_acquisition()
+
         for i in range(cal.numPoints):
             print('Point %d' % (i + 1), '...')
             input('')
             anser.sample_update()
             cal.fieldData[:, i] = np.column_stack(anser.filter.demodulateSignalRef(anser.data, sensorNo))
-        pass
+
         anser.stop_acquisition()
 
         print('Calibrating...')
@@ -174,6 +183,7 @@ if __name__ == '__main__':
 
         file_save = input('Do you wish to save this calibration to calibration.yaml? [Y/n]: ')
         yes_state = ['', 'Y', 'YE', 'YES']
+
         if file_save.upper() in yes_state:
             cal_contents = get_calibration()
             cal_contents[sensorNo] = [float(i) for i in scalers]
@@ -182,6 +192,7 @@ if __name__ == '__main__':
         else:
             pass
         print('Calibration complete.')
+
     # Else run the system as normal
     else:
 
@@ -189,7 +200,7 @@ if __name__ == '__main__':
         print_settings(config)
 
         # Create an instance of the tracking system
-        anser = Anser(config)
+        anser = EMTracker(config)
         # Initialise the tracking system DAQ
         anser.start_acquisition()
         anser.flipflags = flip_option
@@ -198,7 +209,6 @@ if __name__ == '__main__':
         print("Press Ctrl-C to exit...")
 
         delay = config['system']['update_delay']
-
 
         try:
 
@@ -210,7 +220,7 @@ if __name__ == '__main__':
                 # Update the sample data for all sensor channels
                 anser.sample_update()
 
-                # Iterate through each sensor  data channel and solve for each position.
+                # Iterate through each sensor data channel and solve for each position.
                 for sensorNo in config['system']['channels']:
                     positionVector1, positionMatrix1 = anser.get_position(sensorNo, igtname='Pointer_' + str(sensorNo))
                     if print_option == True:

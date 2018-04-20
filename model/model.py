@@ -1,7 +1,10 @@
+""" Class definition for magnetic model used by the EM tracking system"""
+
 import numpy as np
 import importlib
 
-class MagneticModel():
+
+class MagneticModel:
 
 
     def __init__(self, model_config):

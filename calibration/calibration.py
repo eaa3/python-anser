@@ -1,7 +1,9 @@
+""" Class definition for managing the system calibration and location of calibration points"""
+
 from model.constants import u0, pi
 import numpy as np
 from scipy.optimize import least_squares
-from solver.objective import objectiveScalingOffsetZ
+from solver.objective import objectiveCalibrate
 from utils.settings import get_calibration
 
 
@@ -101,7 +103,7 @@ class Calibration:
         # Iterate over each coil and calculate the scaling factors of each.
         for i in range(numcoils):
 
-            result = least_squares(objectiveScalingOffsetZ, estimate, args=(self.fieldData[i, :], i, self.model, calpoints),
+            result = least_squares(objectiveCalibrate, estimate, args=(self.fieldData[i, :], i, self.model, calpoints),
                                    jac='3-point', method='trf', ftol=2.3e-14,
                                    xtol=1e-6, gtol=2.3e-16, verbose=0)
 

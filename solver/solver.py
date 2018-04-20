@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.optimize import least_squares
-from solver.objective import objectiveCoilSquareCalc3D
+from solver.objective import objectiveSolve
 
-class Solver():
+
+class Solver:
     def __init__(self, calibration, model, solver_config):
 
         # Solver settings
@@ -33,20 +34,20 @@ class Solver():
     def solveLeastSquares(self, flux):
 
         if self.method.upper() == 'TRF':
-            result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+            result = least_squares(objectiveSolve, self.conditions,
                                    args=(flux, self.calibration, self.modelObject),
                                          jac=self.jac, bounds=self.bounds, method=self.method,
                                          ftol=self.ftol, xtol=self.xtol,
                                          gtol=self.gtol, verbose=self.verbosity)
             return result
         elif self.method.upper() == 'LM':
-            result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+            result = least_squares(objectiveSolve, self.conditions,
                                    args=(flux, self.calibration, self.modelObject),
                                    jac=self.jac, method=self.method,
                                    ftol=self.ftol, xtol=self.xtol,
                                    gtol=self.gtol, verbose=self.verbosity)
         elif self.method.upper() == 'DOGBOX':
-            result = least_squares(objectiveCoilSquareCalc3D, self.conditions,
+            result = least_squares(objectiveSolve, self.conditions,
                                    args=(flux, self.calibration, self.modelObject),
                                    jac=self.jac, bounds=self.bounds, method=self.method,
                                    ftol=self.ftol, xtol=self.xtol,

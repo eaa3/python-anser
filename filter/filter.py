@@ -1,9 +1,12 @@
+""" Class definition for system filter used to demodulate signals from the data acquisition unit"""
+
 import numpy as np
 from numpy.matlib import repmat
 from scipy.signal import firwin
 from model.constants import pi
 
-class Filter():
+class Filter:
+
     def __init__(self, config):
 
         # The number of samples per frame acquired by the DAQ unit

@@ -110,7 +110,7 @@ solver:
     - 3.14159265359       # Theta (elevation)
     - 9.42477796077       # Phi (azimuthal)
   method: trf            # Solving method
-  ftol: 2.3e-14
+  ftol: 2.3e-16
   xtol: 1e-6
   gtol: 2.3e-16
   verbosity: 0
@@ -118,7 +118,7 @@ solver:
     - 0.0                 # x
     - 0.0                 # y
     - 0.2                 # z
-    - 0                   # Theta (elevation)
+    - pi                   # Theta (elevation)
     - 0                   # Phi (azimuthal)
 
 

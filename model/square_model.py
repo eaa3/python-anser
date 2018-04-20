@@ -1,6 +1,9 @@
+""" Designer specified class definition for emitter coils used in the EM tracking system design"""
+
 import numpy as np
 
-class CoilModel():
+
+class CoilModel:
 
     # The init function should initialise and prepare all data necessary for 'coil_field' to operate
     def __init__(self, module_config):
