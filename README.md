@@ -42,17 +42,17 @@ mesa-libGL.i686
 nss-softokn-freebl.i686
 zlib.i686`
 - More information about this issue can be found [here](https://knowledge.ni.com/KnowledgeArticleDetails?id=kA00Z000000PASQSA4)
-- *NOTE* You must rerun `UpdateNIDrivers` whenever the OS kernel is updated, otherwise the DAQ driver will not initialise
+- *NOTE* You must rerun `UpdateNIDrivers` located in `/bin` whenever the OS kernel is updated, otherwise the DAQ driver will not initialise
 - Reboot the OS and run `lsdaq` with the DAQ plugged into the computer. The device should be recognised as `DevX` where X is the index of the device.
 
-## Calibration for Anser EMT 7x7
+## Calibration for Anser EMT (7x7 calibration grid)
 - Run `python launcher.py --calibrate -d DevX` where `python` corresponds to the Anaconda3 environment and X is the DAQ identifier.
 - Enter the identifier of the sensor you wish to calibrate i.e. 1, 2 etc.
 - Connect the calibration probe lead to the corresponding port and place the probe on Point 1
 - Press enter and follow the on-screen instructions
 - After calibration you have the option to save the resulting calibration to file.
 
-## Tracking for Anser EMT 7x7 (Sensor 1)
+## Tracking for Anser EMT (sensor 1)
 - Run `python launcher.py -d DevX -u 50 -l 2000 -s 1 -p` where `python` corresponds to the Anaconda3 environment and X is the DAQ identifier.
 - The position of the sensor should be print on the commandline in real-time at ~50Hz
 - Creating an OpenIGTLink client connection in  MITK/CustusX/3DSlicer will allow you to visualise the positions being resolved.

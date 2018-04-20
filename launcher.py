@@ -99,6 +99,10 @@ if __name__ == '__main__':
                         action='append', required=False)
     parser.add_argument('--solver', type=str,
                         help='Type of solving algorithm to use (lm, trf, dogbox)')
+    parser.add_argument('--jacobian', type=str,
+                        help='Method of computing the Jacobian matrix (2-point (fast), 3-point (slow, more accurate))')
+    parser.add_argument('--grid', type=str,
+                        help='Calibration grid type (7x7 (default, 9x9, Lego (prototype)))')
     parser.add_argument('--calibrate', action='store_true', help='Perform calibration', default=False)
 
 
@@ -107,6 +111,9 @@ if __name__ == '__main__':
 
     if args.sensors is not None:
         config['system']['channels'] = list(int(i) for i in args.sensors)
+
+    if args.grid is not None:
+        config['system']['device_cal'] = args.jacobian
 
     if args.frequencies is not None:
         config['filter']['freqs'] = list(args.frequencies)
@@ -141,6 +148,9 @@ if __name__ == '__main__':
 
     if args.solver is not None:
         config['solver']['method'] = args.solver
+
+    if args.jacobian is not None:
+        config['solver']['jacobian'] = args.jacobian
 
     flip_option = []
     if args.flip is not None:
