@@ -105,8 +105,7 @@ if __name__ == '__main__':
                         help='Calibration grid type (7x7 (default, 9x9, Lego (prototype)))')
     parser.add_argument('--calibrate', action='store_true', help='Perform calibration', default=False)
 
-
-    # Parse all arguments
+    # Parse all arguments. Any passed arguments overwrite those in the configuration file
     args = parser.parse_args()
 
     if args.sensors is not None:
@@ -160,24 +159,29 @@ if __name__ == '__main__':
 
     print_info()
 
-    # If calibration is requested, run the calibration procedure
+    # If calibration is requested then run the calibration procedure
     if args.calibrate == True:
 
+        # Prompt the user for the sensor id
         sensorNo = int(input('\nEnter sensor id to calibrate: '))
         config['system']['channels'] = [sensorNo]
+
+        # Declare the EM tracking system with its associated configuration
         anser = EMTracker(config)
         cal = Calibration(config['system']['device_cal'], anser.model)
         cal.fieldData = np.zeros([cal.numCoils, cal.numPoints])
 
+        # Check if running on the windows platform. If not, then disable continuous sampling for calibration
         if platform.system() == 'Windows':
             anser.daq.setContSamps(True)
         else:
             anser.daq.setContSamps(False)
 
-
+        # Reset the DAQ to take into account any changes in DAQ configuration
         anser.daq.resetDaq()
         anser.start_acquisition()
 
+        # Iterate though all the predefined calibration points and store the magnetic field strengths at these locations
         for i in range(cal.numPoints):
             print('Point %d' % (i + 1), '...')
             input('')
@@ -186,14 +190,15 @@ if __name__ == '__main__':
 
         anser.stop_acquisition()
 
+        # Attempt to calibrate the system using the gathered field strength values. Store the resulting scaling factors
         print('Calibrating...')
         result = cal.calibrateZ()
         scalers = result[:, 1]
         print('Done\n')
 
+        # Prompt the user to save the calibration
         file_save = input('Do you wish to save this calibration to calibration.yaml? [Y/n]: ')
         yes_state = ['', 'Y', 'YE', 'YES']
-
         if file_save.upper() in yes_state:
             cal_contents = get_calibration()
             cal_contents[sensorNo] = [float(i) for i in scalers]
