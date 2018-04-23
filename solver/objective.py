@@ -23,6 +23,9 @@ def objectiveSolve(currentPandO, fluxSense, calibration, model):
 
     fluxModel = np.multiply(fluxModel, np.transpose(np.matrix(calibration)))
 
+    if fluxModel.shape != fluxSense.shape:
+        exit('Error: Magnetic model and sensed flux vectors must be the same shape')
+
     out = fluxModel - fluxSense
     out = np.array(out)
     out = np.ndarray.flatten(out)

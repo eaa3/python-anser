@@ -3,7 +3,7 @@
 from model.constants import u0, pi
 import numpy as np
 from scipy.optimize import least_squares
-from solver.objective import objectiveCalibrate
+from solver.objective import objectiveCalibrate, objectiveSolve
 from utils.settings import get_calibration
 
 
@@ -14,6 +14,9 @@ class Calibration:
         self.model = model
         self.caltype = caltype
         self.calarray = get_calibration()
+
+        self.cals = 0
+        self.zoffsets = 0
 
         self.numCoils = self.model.numcoils
         self.fieldData = np.array([])
@@ -55,7 +58,7 @@ class Calibration:
                  -np.ones((9,))*spacing*4)))
 
             boardDepth = 4e-3
-            self.z = ((boardDepth + probeheight)) * np.ones((self.numPoints,))
+            self.z = (boardDepth + probeheight) * np.ones((self.numPoints,))
 
         elif caltype.upper() == '7X7':
 
@@ -76,7 +79,7 @@ class Calibration:
             self.z = ((boardDepth + probeheight)) * np.ones((self.numPoints,))
         self.fieldData = np.zeros([self.numCoils, self.numPoints])
 
-    def calibrateZ(self):
+    def run_calibration(self):
 
         # The calibration of the system is based on scaling the magnetic field from each individual transmitter coil,
         # thus the number of calibration values to solve is equal to the number of transmitter coils.
@@ -109,8 +112,39 @@ class Calibration:
 
             cals.append(result.x)
 
-        # Sensor is point towards the board (Theta = pi) during calibration. This sign change takes this into account.
-        cals = np.array(cals) * np.sign(np.cos(sensorOrientation))
+        cals = np.array(cals)
 
-        print(cals)
-        return cals
+        # First column of calibration result is the detect z axis offset in the sensor height
+        self.zoffsets = cals[:, 0]
+        # Second column is a vector of scalers for the magnetic field produced by each transmission coil
+        self.cals = cals[:,1]
+
+        print(self.cals)
+
+        return self.cals
+
+    def check_calibration(self, solver):
+
+
+        solutions = np.zeros((self.numPoints, 5))
+
+        for i in range(self.numPoints):
+
+            fluxPoint = np.zeros((self.numCoils, 1))
+            fluxPoint[:,0] = self.fieldData[:, i]
+
+            solver.conditions = np.array([0, 0, 0.2, 0, 0])
+            result = solver.solveLeastSquares(fluxPoint)
+
+            solutions[i, :] = result.x
+
+        x_error = np.subtract(self.x, solutions[:, 0])
+        y_error = np.subtract(self.y, solutions[:, 1])
+        # Subtract the z-offset detected during the calibration procedure
+        z_error = np.subtract(self.z, solutions[:, 2]) - np.mean(self.zoffsets)
+
+        square_error = np.sqrt(np.square(x_error) + np.square(y_error) + np.square(z_error))
+
+        rms_error_mm = 1000 * np.mean(square_error)
+
+        return rms_error_mm

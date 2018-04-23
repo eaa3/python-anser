@@ -118,7 +118,7 @@ solver:
     - 0.0                 # x
     - 0.0                 # y
     - 0.2                 # z
-    - pi                   # Theta (elevation)
+    - 3.14159265359                   # Theta (elevation)
     - 0                   # Phi (azimuthal)
 
 

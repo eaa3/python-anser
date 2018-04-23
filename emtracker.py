@@ -81,7 +81,7 @@ class EMTracker:
         # Optional sensor orientation correction (Theta + Pi) is applied before transmission
         if self.igtconn is not None:
             igtposition = position.copy()
-            if str(sensorNo) in self.flipflags:
+            if str(sensorNo) not in self.flipflags:
                 igtposition[3] = igtposition[3] + pi
             igtmat = self.vec_2_mat_5dof(igtposition)
             self._igt_send_transform(igtmat, igtname)

@@ -112,7 +112,7 @@ if __name__ == '__main__':
         config['system']['channels'] = list(int(i) for i in args.sensors)
 
     if args.grid is not None:
-        config['system']['device_cal'] = args.jacobian
+        config['system']['device_cal'] = args.grid
 
     if args.frequencies is not None:
         config['filter']['freqs'] = list(args.frequencies)
@@ -192,9 +192,17 @@ if __name__ == '__main__':
 
         # Attempt to calibrate the system using the gathered field strength values. Store the resulting scaling factors
         print('Calibrating...')
-        result = cal.calibrateZ()
-        scalers = result[:, 1]
+        result = cal.run_calibration()
+        scalers = result
         print('Done\n')
+
+        # Prompt the user to check the calibration accuracy
+        check_prompt = input('Do you wish check the accuracy of this calibration? [Y/n]: ')
+        yes_state = ['', 'Y', 'YE', 'YES']
+        if check_prompt.upper() in yes_state:
+            print('RMS error in calibration is %f\n' % cal.check_calibration(anser.solver))
+        else:
+            pass
 
         # Prompt the user to save the calibration
         file_save = input('Do you wish to save this calibration to calibration.yaml? [Y/n]: ')
@@ -207,6 +215,7 @@ if __name__ == '__main__':
         else:
             pass
         print('Calibration complete.')
+
 
     # Else run the system as normal
     else:
