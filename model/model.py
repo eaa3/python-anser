@@ -1,7 +1,7 @@
 """ Class definition for magnetic model used by the EM tracking system"""
 
 import numpy as np
-import importlib
+from model.square_model import CoilModel
 
 
 class MagneticModel:
@@ -11,11 +11,8 @@ class MagneticModel:
         self.model_name = model_config['model_name']
         self.numcoils = model_config['num_coils']
 
-        # Import functions for coil model calculations
-        # self.mod = importlib.import_module(model_name)
-        self.module = importlib.import_module('model.square_model')
         # Import function to calculate field using the coil model. This is ALWAYS required
-        self.coil_model = self.module.CoilModel(model_config)
+        self.coil_model = CoilModel(model_config)
 
 
     # Get the field intensity from ALL transmitter coils at a single point in space
