@@ -186,7 +186,7 @@ if __name__ == '__main__':
             print('Point %d' % (i + 1), '...')
             input('')
             anser.sample_update()
-            cal.fieldData[:, i] = np.column_stack(anser.filter.demodulateSignalRef(anser.data, sensorNo))
+            cal.fieldData[:, i] = np.column_stack(anser.filter.demodulateSignalRef(anser.data, 1))# Data always in Col 1
 
         anser.stop_acquisition()
 
@@ -196,13 +196,15 @@ if __name__ == '__main__':
         scalers = result
         print('Done\n')
 
+        #TODO: Fix calibration checking. Sometimes outputs RMS errors are much to large to be considered reliable,
+        # particularly when the system runs just fine
         # Prompt the user to check the calibration accuracy
-        check_prompt = input('Do you wish check the accuracy of this calibration? [Y/n]: ')
-        yes_state = ['', 'Y', 'YE', 'YES']
-        if check_prompt.upper() in yes_state:
-            print('RMS error in calibration is %f\n' % cal.check_calibration(anser.solver))
-        else:
-            pass
+        # check_prompt = input('Do you wish check the accuracy of this calibration? [Y/n]: ')
+        # yes_state = ['', 'Y', 'YE', 'YES']
+        #if check_prompt.upper() in yes_state:
+        #    print('RMS error in calibration is %f\n' % cal.check_calibration(anser.solver))
+        #else:
+        #   pass
 
         # Prompt the user to save the calibration
         file_save = input('Do you wish to save this calibration to calibration.yaml? [Y/n]: ')

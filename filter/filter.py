@@ -26,6 +26,7 @@ class Filter:
         self.scale = filter_config['scale']
 
         self.numChannels = len(config['system']['channels'])
+        self.channels = config['system']['channels']
         # Generate digital input filter
         self.filtArray = np.array([])
         self.filtMatrix = np.matrix(self.filtArray, dtype=float)
@@ -95,7 +96,7 @@ class Filter:
 
         return np.transpose(signedFlux)
 
-    def demodulateSignalRef(self, data, channel):
+    def demodulateSignalRef(self, data, columnIndex):
 
         # This scaler approximately takes into account various sensor acquisition constants (cross sectional area, sensor
         # coil turns, amplifier gain etc.)
@@ -109,7 +110,7 @@ class Filter:
         # TODO This should be obtained from a file.
         refIndex = 0
 
-        dataDemod = np.transpose(np.column_stack((data[:, refIndex], data[:, channel])))
+        dataDemod = np.transpose(np.column_stack((data[:, refIndex], data[:, columnIndex])))
 
         result = np.multiply(dataDemod, self.filtMatrix)
         result = result * np.transpose(self.demodMatrix)

@@ -108,7 +108,7 @@ class Calibration:
 
             result = least_squares(objectiveCalibrate, estimate, args=(self.fieldData[i, :], i, self.model, calpoints),
                                    jac='3-point', method='trf', ftol=2.3e-16,
-                                   xtol=1e-8, gtol=2.3e-16, verbose=0)
+                                   xtol=1e-6, gtol=2.3e-16, verbose=0)
 
             cals.append(result.x)
 
@@ -127,6 +127,9 @@ class Calibration:
 
 
         solutions = np.zeros((self.numPoints, 5))
+
+        if np.sign(self.cals[0]) < 0:
+            self.zoffsets = 2 * self.z[0] - self.zoffsets
 
         for i in range(self.numPoints):
 
