@@ -107,8 +107,8 @@ class Calibration:
         for i in range(numcoils):
 
             result = least_squares(objectiveCalibrate, estimate, args=(self.fieldData[i, :], i, self.model, calpoints),
-                                   jac='3-point', method='trf', ftol=2.3e-14,
-                                   xtol=1e-6, gtol=2.3e-16, verbose=0)
+                                   jac='3-point', method='trf', ftol=2.3e-16,
+                                   xtol=1e-8, gtol=2.3e-16, verbose=0)
 
             cals.append(result.x)
 
@@ -133,7 +133,7 @@ class Calibration:
             fluxPoint = np.zeros((self.numCoils, 1))
             fluxPoint[:,0] = self.fieldData[:, i]
 
-            solver.conditions = np.array([0, 0, 0.2, 0, 0])
+            solver.conditions = np.array([0, 0, 0.1, 0, 0])
             result = solver.solveLeastSquares(fluxPoint)
 
             solutions[i, :] = result.x
@@ -141,7 +141,7 @@ class Calibration:
         x_error = np.subtract(self.x, solutions[:, 0])
         y_error = np.subtract(self.y, solutions[:, 1])
         # Subtract the z-offset detected during the calibration procedure
-        z_error = np.subtract(self.z, solutions[:, 2]) - np.mean(self.zoffsets)
+        z_error = np.subtract(self.z - np.mean(self.zoffsets), solutions[:, 2])
 
         square_error = np.sqrt(np.square(x_error) + np.square(y_error) + np.square(z_error))
 
