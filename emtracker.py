@@ -8,6 +8,7 @@ from filter.filter import Filter
 from pyIGTLink.pyIGTLink import *
 from pyIGTLink.tests import *
 from model.constants import pi
+from rx.subjects import Subject
 
 
 class EMTracker:
@@ -22,7 +23,7 @@ class EMTracker:
 
         # Define system magnetic model and solver with specific loaded configuration
         self.model = MagneticModel(config['model'])
-        self.solver = Solver(self.cal, self.model, config['solver'])
+        self.solver = Solver(None, self.model, config['solver'])
 
         self.channels = config['system']['channels']
         # Create a dictionary to store previous sensor positions
@@ -42,6 +43,16 @@ class EMTracker:
         if config['system']['igt'] is True:
             self.igtconn = PyIGTLink(port=config['system']['igt_port'], localServer=config['system']['igt_local'])
 
+        self.t = threading.Thread(target=self.run)
+        self.t.daemon = True
+        self.print_option = config['system']['print']
+        self.sampleNotifications = Subject()
+        self.positionNotifications = Subject()
+        self.delay = config['system']['update_delay']
+        self.sensors = []
+        self.device_cal = config['system']['device_cal']
+        self.alive = True
+
     def start_acquisition(self):
         """Start the DAQ acquisition background process"""
         self.daq.daqStart()
@@ -55,6 +66,7 @@ class EMTracker:
         Due to driver limitations, it is important that this function be called as often as possible on Linux and Mac
         operation systems"""
         self.data = self.daq.getData()
+        self.sampleNotifications.on_next(self.data)
 
     #
     def get_position(self, sensorNo, igtname=''):
@@ -106,7 +118,6 @@ class EMTracker:
 
     # Send a transformation matrix mat using the system's OpenIGTLink connection
     def _igt_send_transform(self, mat, device_name=''):
-
         matmsg = TransformMessage(mat, device_name=device_name)
         self.igtconn.add_message_to_send_queue(matmsg)
 
@@ -137,5 +148,73 @@ class EMTracker:
 
         pass
 
+    def create_igt_server(self, port, localhost):
+        if self.igtconn is None:
+            self.igtconn = PyIGTLink(port, localhost)
+            return True
+        return False
 
+    def get_network_message(self):
+        if self.igtconn is not None:
+            if len(self.igtconn.message_in_queue) > 0:
+                return self.igtconn.message_in_queue.popleft()
 
+    def reset_server(self):
+        if self.igtconn is not None:
+            self.igtconn.close_server()
+            self.igtconn = None
+            return True
+        return False
+
+    def add_sensor(self, sensor):
+        self.sensors.append(sensor)
+
+    def start(self):
+        self.t.start()
+
+    def run(self):
+        while self.alive:
+            self.sample_update()
+            positions = []
+            for sensor in self.sensors:
+                position, positionmat = self.get_position2(sensor, sensor.name)
+                positions.append(position)
+                if self.print_option is True:
+                    self.print_position(position)
+            self.positionNotifications.on_next(positions)
+            time.sleep(self.delay)
+
+    def get_position2(self, sensor, igtname=''):
+        """Wrapper to include igt connection"""
+
+        # Set the solver to use the corresponding sensor calibration
+        self.solver.calibration = np.array(sensor.calibration[sensor.channel])
+
+        if sensor.channel in self.prevPositions.keys():
+            self.solver.conditions = self.prevPositions[sensor.channel]
+        else:
+            # Default initial conditionf for the solver
+            self.solver.conditions = [0, 0, 0.2, 0, 0]
+
+        # Resolve the position of the sensor indicated by sensorNo
+        # Convert the resolved position to a 4x4 homogeneous transformation matrix
+        position = self._resolve_position(sensor.channel)
+        positionmat = self.vec_2_mat_5dof(position)
+
+        # Latest resolved position is saved as the initial condition for the next solver iteration
+        self.prevPositions[sensor.channel] = position
+
+        # Send the resolved position over the system's OpenIGTLink connection
+        # Optional sensor orientation correction (Theta + Pi) is applied before transmission
+        if self.igtconn is not None:
+            igtposition = position.copy()
+            if self.flipflags is None or sensor.channel not in self.flipflags:
+                igtposition[3] = igtposition[3] + pi
+            igtmat = self.vec_2_mat_5dof(igtposition)
+            self._igt_send_transform(igtmat, igtname)
+
+        # Return the sensor position in both vector and 4x4 homogeneous transformation matrix.
+        return position, positionmat
+
+    def stop(self):
+        self.alive = False

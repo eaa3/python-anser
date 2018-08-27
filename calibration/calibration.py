@@ -13,7 +13,7 @@ class Calibration:
 
         self.model = model
         self.caltype = caltype
-        self.calarray = get_calibration()
+        #self.calarray = get_calibration()
 
         self.cals = 0
         self.zoffsets = 0

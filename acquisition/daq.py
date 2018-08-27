@@ -27,7 +27,12 @@ class DAQ:
             self.daqPins.append(self.pinMap[channel])
 
         self.sampFreq = config['filter']['sampling_freq']
-        self.numSamples = config['filter']['num_samples']
+        #Supports old configuration file which does not include speed
+        try:
+            self.speed = config['system']['speed']
+            self.numSamples = config['filter']['num_samples'][self.speed]
+        except Exception as e:
+            self.numSamples = config['filter']['num_samples']
 
         self._DAQTask = 0
 

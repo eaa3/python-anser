@@ -11,7 +11,13 @@ class Filter:
 
         # The number of samples per frame acquired by the DAQ unit
         filter_config = config['filter']
-        self.numSamples = filter_config['num_samples']
+        #Supports old configuration file which does not include speed
+        try:
+            self.speed = config['system']['speed']
+            self.numSamples = filter_config['num_samples'][self.speed]
+        except Exception as e:
+            self.numSamples = filter_config['num_samples']
+
         # Define filter parameters
         self.numFreqs = filter_config['num_freqs']
         self.transFreqs = np.array([])

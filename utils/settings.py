@@ -1,5 +1,5 @@
 """ Some support function for accessing configuration files """
-import ruamel_yaml
+import ruamel.yaml as ruamel_yaml
 
 
 def import_settings_file(filename='config.yaml'):

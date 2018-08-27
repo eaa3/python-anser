@@ -46,8 +46,12 @@ class NIDAQ(Task):
         return 0 # The function should return an integer
 
     def DoneCallback(self, status):
-        print("Status",status.value)
-        return 0 # The function should return an integer
+        try:
+            print("Status",status.value)
+            return 0 # The function should return an integer
+        except Exception as e:
+            print(str(e))
+            return 0
 
     def get_data(self, blocking=True, timeout=None):
         if platform.system() == 'Windows' and self.contSample is True:
