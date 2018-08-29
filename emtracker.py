@@ -1,6 +1,7 @@
 """ Class definition for Anser EMT system"""
 
 from utils.settings import get_settings, get_calibration
+from utils.utils import get_relative_filepath
 from model.model import MagneticModel
 from solver.solver import Solver
 from acquisition.daq import DAQ
@@ -18,7 +19,7 @@ class EMTracker:
     def __init__(self, config):
 
         # Load the system calibration values from the calibration file.
-        self.cal_dict = get_calibration('calibration.yaml')
+        self.cal_dict = get_calibration(get_relative_filepath('calibration.yaml'))
         self.cal = np.array(self.cal_dict[1])
 
         # Define system magnetic model and solver with specific loaded configuration

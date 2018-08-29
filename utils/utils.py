@@ -16,6 +16,7 @@ TEMPLATE_DIR_NAME='templates'
 CONFIG_DIR_NAME = 'config/configs'
 YAML_EXTENSION = '.yaml'
 SENSOR_TEMPLATE_FILE_PATH = 'config/templates/sensor_template.yaml'
+PACKAGE_NAME = 'python-anser'
 
 
 def convert_igt_message_to_text(message):
@@ -297,3 +298,15 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath('.'), relative_path)
+
+
+# Necessary if current working directory is not python-anser e.g qt-anser
+def get_relative_filepath(file):
+    cwd = os.getcwd()
+    if cwd is PACKAGE_NAME:
+        return file
+    else:
+        path = os.path.abspath(os.path.dirname(__file__))
+        terminator = path.index(PACKAGE_NAME)
+        test = path[:terminator]
+        return os.path.join(os.path.dirname(test), PACKAGE_NAME, file.strip())
