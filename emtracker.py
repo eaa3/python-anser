@@ -10,7 +10,8 @@ from pyIGTLink.pyIGTLink import *
 from pyIGTLink.tests import *
 from model.constants import pi
 from rx.subjects import Subject
-
+from rx.concurrency import NewThreadScheduler
+import platform
 
 class EMTracker:
     """
@@ -53,6 +54,7 @@ class EMTracker:
         self.sensors = []
         self.device_cal = config['system']['device_cal']
         self.alive = True
+        self.subscriptions = []
 
     def start_acquisition(self):
         """Start the DAQ acquisition background process"""
@@ -69,7 +71,7 @@ class EMTracker:
         self.data = self.daq.getData()
         self.sampleNotifications.on_next(self.data)
 
-    #
+
     def get_position(self, sensorNo, igtname=''):
         """Wrapper to include igt connection"""
 
@@ -174,16 +176,34 @@ class EMTracker:
         self.t.start()
 
     def run(self):
-        while self.alive:
-            self.sample_update()
-            positions = []
-            for sensor in self.sensors:
-                position, positionmat = self.get_position2(sensor, sensor.name)
-                positions.append(position)
-                if self.print_option is True:
-                    self.print_position(position)
+        if platform.system() == 'Darwin':
+            calculate_sensor_postion_thread = NewThreadScheduler()
+            self.subscriptions.append(self.sampleNotifications.sample(10, scheduler=calculate_sensor_postion_thread)
+                                      .subscribe(on_next=self.calculate_sensor_position))
+            while self.alive:
+                self.sample_update()
+                time.sleep(self.delay)
+        else:
+            while self.alive:
+                self.sample_update()
+                positions = []
+                for sensor in self.sensors:
+                    position, positionmat = self.get_position2(sensor, sensor.name)
+                    positions.append(position)
+                    if self.print_option is True:
+                        self.print_position(position)
+                self.positionNotifications.on_next(positions)
+                time.sleep(self.delay)
+
+    def calculate_sensor_position(self, samples):
+        positions = []
+        for sensor in self.sensors:
+            position, positionmat = self.get_position2(sensor, sensor.name)
+            if self.print_option is True:
+                self.print_position(position)
+            positions.append(position)
             self.positionNotifications.on_next(positions)
-            time.sleep(self.delay)
+
 
     def get_position2(self, sensor, igtname=''):
         """Wrapper to include igt connection"""
@@ -219,3 +239,5 @@ class EMTracker:
 
     def stop(self):
         self.alive = False
+        list(map(lambda sub: sub.dispose(), self.subscriptions))
+

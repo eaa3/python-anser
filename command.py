@@ -84,8 +84,8 @@ def create_config(args):
     if hasattr(args, 'ports') and args.ports is not None:
         channels = []
         for port in args.ports:
-            channel = utils.convert_port_num_to_channel_num(port)
-            channels.append(channel)
+           channel = config['system']['channels'][port-1]
+           channels.append(channel)
         config['system']['channels'] = sorted(channels)
 
     if hasattr(args, 'grid') and args.grid is not None:
@@ -263,7 +263,8 @@ if __name__ == '__main__':
                     print('Sensor \'{}\' was not found'.format(args.sensorname))
                     sys.exit(1)
                 sensor = Sensor(sensor_settings)
-                sensor.channel = utils.convert_port_num_to_channel_num(args.port)
+                #sensor.channel = utils.convert_port_num_to_channel_num(args.port, config['system']['channels'])
+                sensor.channel = config['system']['channels'][args.port - 1]
 
                 calibration = EMCalibration(sensor, config)
                 for i in range(calibration.cal.numPoints):
@@ -293,7 +294,8 @@ if __name__ == '__main__':
 
                 for sensor, port in zip(sensors, args.ports):
                     if port in range(1,9):
-                        sensor.channel = utils.convert_port_num_to_channel_num(port)
+                        #sensor.channel = utils.convert_port_num_to_channel_num(port)
+                        sensor.channel = config['system']['channels'][port-1]
                     else:
                         print('Invalid port please choose from (1-8) ')
                         sys.exit(1)
