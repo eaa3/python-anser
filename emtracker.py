@@ -20,8 +20,8 @@ class EMTracker:
     def __init__(self, config):
 
         # Load the system calibration values from the calibration file.
-        self.cal_dict = get_calibration(get_relative_filepath('calibration.yaml'))
-        self.cal = np.array(self.cal_dict[1])
+        #self.cal_dict = get_calibration(get_relative_filepath('calibration.yaml'))
+        #self.cal = np.array(self.cal_dict[1])
 
         # Define system magnetic model and solver with specific loaded configuration
         self.model = MagneticModel(config['model'])
@@ -71,32 +71,40 @@ class EMTracker:
         self.data = self.daq.getData()
         self.sampleNotifications.on_next(self.data)
 
+    def update_sensor_positions(self, samples=None):
+        positions = []
+        for sensor in self.sensors:
+            position, positionmat = self.get_position(sensor, sensor.name)
+            if self.print_option is True:
+                self.print_position(position)
+            positions.append(position)
+        self.positionNotifications.on_next(positions)
 
-    def get_position(self, sensorNo, igtname=''):
+    def get_position(self, sensor, igtname=''):
         """Wrapper to include igt connection"""
 
         # Set the solver to use the corresponding sensor calibration
-        self.solver.calibration = np.array(self.cal_dict[sensorNo])
+        self.solver.calibration = np.array(sensor.calibration[sensor.channel])
 
-        if sensorNo in self.prevPositions.keys():
-            self.solver.conditions = self.prevPositions[sensorNo]
+        if sensor.channel in self.prevPositions.keys():
+            self.solver.conditions = self.prevPositions[sensor.channel]
         else:
             # Default initial conditionf for the solver
             self.solver.conditions = [0, 0, 0.2, 0, 0]
 
         # Resolve the position of the sensor indicated by sensorNo
         # Convert the resolved position to a 4x4 homogeneous transformation matrix
-        position = self._resolve_position(sensorNo)
+        position = self._resolve_position(sensor.channel)
         positionmat = self.vec_2_mat_5dof(position)
 
         # Latest resolved position is saved as the initial condition for the next solver iteration
-        self.prevPositions[sensorNo] = position
+        self.prevPositions[sensor.channel] = position
 
         # Send the resolved position over the system's OpenIGTLink connection
         # Optional sensor orientation correction (Theta + Pi) is applied before transmission
         if self.igtconn is not None:
             igtposition = position.copy()
-            if str(sensorNo) not in self.flipflags:
+            if self.flipflags is None or sensor.channel not in self.flipflags:
                 igtposition[3] = igtposition[3] + pi
             igtmat = self.vec_2_mat_5dof(igtposition)
             self._igt_send_transform(igtmat, igtname)
@@ -177,65 +185,17 @@ class EMTracker:
 
     def run(self):
         if platform.system() == 'Darwin':
-            calculate_sensor_postion_thread = NewThreadScheduler()
-            self.subscriptions.append(self.sampleNotifications.sample(10, scheduler=calculate_sensor_postion_thread)
-                                      .subscribe(on_next=self.calculate_sensor_position))
+            update_pos_thread = NewThreadScheduler()
+            self.subscriptions.append(self.sampleNotifications.sample(10, scheduler=update_pos_thread)
+                                      .subscribe(on_next=self.update_sensor_positions))
             while self.alive:
                 self.sample_update()
                 time.sleep(self.delay)
         else:
             while self.alive:
                 self.sample_update()
-                positions = []
-                for sensor in self.sensors:
-                    position, positionmat = self.get_position2(sensor, sensor.name)
-                    positions.append(position)
-                    if self.print_option is True:
-                        self.print_position(position)
-                self.positionNotifications.on_next(positions)
+                self.update_sensor_positions()
                 time.sleep(self.delay)
-
-    def calculate_sensor_position(self, samples):
-        positions = []
-        for sensor in self.sensors:
-            position, positionmat = self.get_position2(sensor, sensor.name)
-            if self.print_option is True:
-                self.print_position(position)
-            positions.append(position)
-            self.positionNotifications.on_next(positions)
-
-
-    def get_position2(self, sensor, igtname=''):
-        """Wrapper to include igt connection"""
-
-        # Set the solver to use the corresponding sensor calibration
-        self.solver.calibration = np.array(sensor.calibration[sensor.channel])
-
-        if sensor.channel in self.prevPositions.keys():
-            self.solver.conditions = self.prevPositions[sensor.channel]
-        else:
-            # Default initial conditionf for the solver
-            self.solver.conditions = [0, 0, 0.2, 0, 0]
-
-        # Resolve the position of the sensor indicated by sensorNo
-        # Convert the resolved position to a 4x4 homogeneous transformation matrix
-        position = self._resolve_position(sensor.channel)
-        positionmat = self.vec_2_mat_5dof(position)
-
-        # Latest resolved position is saved as the initial condition for the next solver iteration
-        self.prevPositions[sensor.channel] = position
-
-        # Send the resolved position over the system's OpenIGTLink connection
-        # Optional sensor orientation correction (Theta + Pi) is applied before transmission
-        if self.igtconn is not None:
-            igtposition = position.copy()
-            if self.flipflags is None or sensor.channel not in self.flipflags:
-                igtposition[3] = igtposition[3] + pi
-            igtmat = self.vec_2_mat_5dof(igtposition)
-            self._igt_send_transform(igtmat, igtname)
-
-        # Return the sensor position in both vector and 4x4 homogeneous transformation matrix.
-        return position, positionmat
 
     def stop(self):
         self.alive = False
