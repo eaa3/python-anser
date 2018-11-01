@@ -244,8 +244,8 @@ if __name__ == '__main__':
         elif command == 'list':
             print('List of available Sensors')
             print('--------------------------')
-            for index, file in enumerate(utils.get_all_sensor_files()):
-                sensor_settings = utils.import_sensor_settings(utils.convert_file_name_to_sensor_name(file.title()))
+            for index, file in enumerate(utils.find_all_sensors()):
+                sensor_settings = utils.import_sensor_settings(file)
                 sensor = Sensor(sensor_settings)
                 print('{}.  Sensor Name: {}'.format(index+1, sensor.name))
                 print('     Description: {}'.format(sensor.description))
@@ -303,5 +303,3 @@ if __name__ == '__main__':
                 start_tracking(config, sensors)
             except Exception as e:
                 print(str(e))
-
-

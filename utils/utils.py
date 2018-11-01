@@ -5,18 +5,22 @@ import serial.tools.list_ports
 import os
 import sys
 from shutil import copyfile
-import utils.settings as settings
 import ruamel.yaml as ruamel_yaml
 from sensor.sensor import Sensor
 
 SENSOR_PREFIX = 'sensor_'
 CONFIG_PREFIX = 'config_'
 SENSOR_DIR_NAME = 'config/sensors'
-TEMPLATE_DIR_NAME='templates'
+TEMPLATE_DIR_NAME='config/templates'
 CONFIG_DIR_NAME = 'config/configs'
 YAML_EXTENSION = '.yaml'
 SENSOR_TEMPLATE_FILE_PATH = 'config/templates/sensor_template.yaml'
 PACKAGE_NAME = 'python-anser'
+
+
+'''----------------------------------------------------------------------------'''
+'''                           IGT MESSAGE PARSING FUNCTIONS                    '''
+'''----------------------------------------------------------------------------'''
 
 
 def convert_igt_message_to_text(message):
@@ -29,6 +33,11 @@ def convert_igt_message_to_text(message):
     return text
 
 
+'''----------------------------------------------------------------------------'''
+'''                           PORT/CHANNEL/CALIBRATION/DOF                     '''
+'''----------------------------------------------------------------------------'''
+
+
 #TODO: include dof parameter
 def convert_port_num_to_channel_num(port_num):
     return port_num * 2 - 1
@@ -37,8 +46,183 @@ def convert_port_num_to_channel_num(port_num):
 def convert_channels_to_ports(channels):
     ports = []
     for index, channel in enumerate(channels):
-        ports.append(int(np.floor((channel + 1)/2)))
+        ports.append(int(np.ceil((channel)/2)))
     return ports
+
+
+#TODO: change this so it uses the get_calibration() function
+def get_working_channels(calibration):
+    channels = []
+    for channel in calibration.keys():
+        if calibration[channel] != [0]*8:
+            if channel not in channels:
+                channels.append(channel)
+    return channels
+
+
+'''----------------------------------------------------------------------------'''
+'''                            STANDARDISING FILENAMES                         '''
+'''----------------------------------------------------------------------------'''
+
+
+def convert_file_name_to_sensor_name(file_name):
+    sensor_name = file_name.title().lower().replace(SENSOR_PREFIX, '').replace(YAML_EXTENSION, '')
+    return sensor_name.title()
+
+
+def convert_sensor_name_to_file_name(sensor_name):
+    file_name = SENSOR_PREFIX + sensor_name.strip().lower() + YAML_EXTENSION
+    return file_name.title().lower()
+
+
+'''----------------------------------------------------------------------------'''
+'''                       RETRIEVING SENSOR/CONFIG FILES                       '''
+'''----------------------------------------------------------------------------'''
+
+
+def find_sensor(name):
+    try:
+        name = name.strip().lower()
+        if YAML_EXTENSION not in name:
+            filename = convert_sensor_name_to_file_name(name)
+        else:
+            filename = name
+        filepath = resource_path(os.path.join(SENSOR_DIR_NAME, filename))
+        return filepath
+    except Exception as e:
+        return None
+
+
+def find_config(name):
+    try:
+        name = name.strip().lower()
+        if YAML_EXTENSION not in name:
+            filename = name + YAML_EXTENSION
+        else:
+            filename = name
+        filepath = resource_path(os.path.join(CONFIG_DIR_NAME, filename))
+        return filepath
+    except Exception as e:
+        return None
+
+
+def find_all_sensors():
+    sensor_files = []
+    for file in os.listdir(resource_path(SENSOR_DIR_NAME)):
+        if YAML_EXTENSION and SENSOR_PREFIX in file.title().lower():
+            sensor_files.append(file)
+    return sensor_files
+
+
+def find_all_configs():
+    config_files = []
+    for file in os.listdir(resource_path(CONFIG_DIR_NAME)):
+        if YAML_EXTENSION and CONFIG_PREFIX in file.title().lower():
+            config_files.append(file)
+    return config_files
+
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath('.'), relative_path)
+
+
+# Necessary if current working directory is not python-anser e.g qt-anser
+def get_relative_filepath(file):
+    cwd = os.getcwd()
+    if cwd is PACKAGE_NAME:
+        return file
+    else:
+        path = os.path.abspath(os.path.dirname(__file__))
+        terminator = path.index(PACKAGE_NAME)
+        test = path[:terminator]
+        return os.path.join(os.path.dirname(test), PACKAGE_NAME, file.strip())
+
+
+'''----------------------------------------------------------------------------'''
+'''                         ADDING/REMOVING/GETTING SENSORS                    '''
+'''----------------------------------------------------------------------------'''
+
+
+def add_sensor(sensor_name, description, dof):
+    if sensor_name != '':
+        try:
+            filepath = open(find_sensor(sensor_name), 'w')
+            copyfile(resource_path(SENSOR_TEMPLATE_FILE_PATH), filepath.name)
+            sensor_settings = import_sensor_settings(sensor_name)
+            sensor_settings['name'] = sensor_name
+            sensor_settings['description'] = description
+            sensor_settings['dof'] = dof
+            export_settings(sensor_settings, filepath.name)
+            return True
+        except Exception as e:
+            print(str(e))
+    return False
+
+
+def remove_sensor(sensor_name):
+    try:
+        os.remove(find_sensor(sensor_name))
+        return True
+    except Exception as e:
+        print(str(e))
+        return False
+
+
+def get_sensors():
+    sensors = []
+    try:
+        sensorFiles = find_all_sensors()
+        for file in sensorFiles:
+            sensor_settings = import_sensor_settings(file)
+            sensor = Sensor(sensor_settings)
+            channels = get_working_channels(sensor.calibration)
+            sensor.ports = convert_channels_to_ports(channels)
+            sensors.append(sensor)
+    except Exception as e:
+        print(str(e))
+    return sensors
+
+
+'''----------------------------------------------------------------------------'''
+'''                             READ/WRITE YAML FILES                          '''
+'''----------------------------------------------------------------------------'''
+
+
+def import_settings(filepath):
+    try:
+        with open(filepath, 'r') as stream:
+            settings_dict = ruamel_yaml.load(stream, Loader=ruamel_yaml.Loader)
+            stream.close()
+            return settings_dict
+    except Exception as e:
+        print(str(e))
+        return None
+
+
+def export_settings(settings, filepath):
+    try:
+        with open(filepath, 'w') as stream:
+            ruamel_yaml.dump(settings, stream)
+    except Exception as e:
+        return False
+    return True
+
+
+def import_config_settings(name):
+    filepath = find_config(name)
+    return import_settings(filepath)
+
+
+def import_sensor_settings(name):
+    filepath = find_sensor(name)
+    return import_settings(filepath)
+
+
+'''----------------------------------------------------------------------------'''
+'''                                 MCU & Frequencies                          '''
+'''----------------------------------------------------------------------------'''
 
 
 def convert_samples_to_fft_dbs(samples, channel):
@@ -55,6 +239,40 @@ def convert_samples_to_fft_dbs(samples, channel):
         magnitudes_in_dbs[0] = average
         return magnitudes_in_dbs
     return None
+
+def convert_samples_to_fft(samples, channel, sampling_freq):
+    sessionData = samples[:, channel]
+    # FFT
+    ft = np.fft.fft(sessionData, axis=0)
+    # length of signal
+    block_size = len(ft)  # 3000
+    block_size_half = block_size / 2  # 1500
+    freq = np.arange(block_size_half) / block_size_half
+    # One side frequency range
+    ft = ft[range(int(block_size_half))]
+    # magnitudes
+    magnitudes = abs(ft)
+    # log + + Normalisation
+    magnitudes_in_dbs = 20 * np.log10(magnitudes / block_size)
+    magnitudes_in_dbs = [val for sublist in magnitudes_in_dbs for val in sublist]
+    # remove dc component at point 1
+    magnitudes_in_dbs[0] = np.average(magnitudes_in_dbs)
+    # TODO: fix this
+    fs = sampling_freq
+    #block_size = blocksize
+    frequency_resolution =  fs / block_size
+    frequencies = np.arange(block_size_half * frequency_resolution, step=frequency_resolution)
+    #for index, num in enumerate(magnitudes_in_dbs):
+    #    print('{}: {}'.format(index, num))
+    '''
+    text_file = open("test.txt", "w")
+    for index, f in enumerate(frequencies):
+        line = str(f) + ' <--->' + str(magnitudes_in_dbs[int(round(f / (sampling_freq/block_size)))]) + ' exactly:{} '.format(f/(sampling_freq/block_size)) + ' resources:{}'.format(frequency_resolution) + 'bin nr:{}'.format(index) + '\n'
+        text_file.write(line)
+        print(line)
+    text_file.close()
+    '''
+    return frequencies, magnitudes_in_dbs
 
 
 def is_frequency_active(freq, samples, sampling_freq,):
@@ -108,205 +326,3 @@ def write_frequencies_to_teensy_from_list(freq_list):
     except Exception as e:
         print('FREQUENCIES HAVE NOT BEEN CHANGED' + str(e))
         return 1
-
-
-def get_all_sensor_files():
-    sensor_files = []
-    for file in os.listdir(resource_path('./config/sensors/')):
-        if YAML_EXTENSION and SENSOR_PREFIX in file.title().lower():
-            sensor_files.append(file)
-    return sensor_files
-
-
-def get_all_config_files():
-    config_files = []
-    for file in os.listdir(resource_path('./config/configs/')):
-        if YAML_EXTENSION and CONFIG_PREFIX in file.title().lower():
-            config_files.append(file)
-    return config_files
-
-
-def convert_file_name_to_sensor_name(file):
-    sensor_name = file.title().lower().replace(SENSOR_PREFIX, '').replace(YAML_EXTENSION, '')
-    return sensor_name.title()
-
-
-def convert_sensor_name_to_file_name(sensor_name):
-    file_name = SENSOR_PREFIX + sensor_name.strip().lower() + YAML_EXTENSION
-    return file_name.title().lower()
-
-
-def add_sensor(sensor_name, description, dof):
-    if sensor_name != '':
-        file_name = convert_sensor_name_to_file_name(sensor_name)
-        try:
-            # Creates a sensor file
-            open(os.path.join(SENSOR_DIR_NAME, file_name), 'w')
-            copyfile(SENSOR_TEMPLATE_FILE_PATH, os.path.join(SENSOR_DIR_NAME, file_name))
-            sensor_settings = settings.import_settings_file('./config/sensors/' + file_name)
-            sensor_settings['name'] = sensor_name
-            sensor_settings['description'] = description
-            sensor_settings['dof'] = dof
-            settings.write_calibration(sensor_settings, './config/sensors/'+file_name)
-            return True
-        except Exception as e:
-            print(str(e))
-    return False
-
-
-def remove_sensor(sensor_name):
-    for file in os.listdir('./config/sensors/'):
-        #TODO: this only works when lowercase
-        if YAML_EXTENSION and SENSOR_PREFIX and sensor_name.lower() in file.title().lower():
-            try:
-                os.remove(os.path.join(SENSOR_DIR_NAME, convert_sensor_name_to_file_name(sensor_name)))
-                return True
-            except Exception as e:
-                print(str(e))
-                return False
-
-def get_sensors():
-    sensors = []
-    sensorFiles = get_all_sensor_files()
-    for file in sensorFiles:
-        name = convert_file_name_to_sensor_name(file)
-        sensor_settings = import_sensor_settings(name)
-        sensor = Sensor(sensor_settings)
-        channels = get_working_channels(sensor.calibration)
-        sensor.ports = convert_channels_to_ports(channels)
-        sensors.append(sensor)
-    return sensors
-
-
-#TODO: change this so it uses the get_calibration() function
-def get_working_channels(calibration):
-    channels = []
-    for channel in calibration.keys():
-        if calibration[channel] != [0]*8:
-            if channel not in channels:
-                channels.append(channel)
-    return channels
-
-
-def convert_samples_to_fft(samples, channel, sampling_freq):
-    sessionData = samples[:, channel]
-    # FFT
-    ft = np.fft.fft(sessionData, axis=0)
-    # length of signal
-    block_size = len(ft)  # 3000
-    block_size_half = block_size / 2  # 1500
-    freq = np.arange(block_size_half) / block_size_half
-    # One side frequency range
-    ft = ft[range(int(block_size_half))]
-    # magnitudes
-    magnitudes = abs(ft)
-    # log + + Normalisation
-    magnitudes_in_dbs = 20 * np.log10(magnitudes / block_size)
-    magnitudes_in_dbs = [val for sublist in magnitudes_in_dbs for val in sublist]
-    # remove dc component at point 1
-    magnitudes_in_dbs[0] = np.average(magnitudes_in_dbs)
-    # TODO: fix this
-    fs = sampling_freq
-    #block_size = blocksize
-    frequency_resolution =  fs / block_size
-    frequencies = np.arange(block_size_half * frequency_resolution, step=frequency_resolution)
-    #for index, num in enumerate(magnitudes_in_dbs):
-    #    print('{}: {}'.format(index, num))
-    '''
-    text_file = open("test.txt", "w")
-    for index, f in enumerate(frequencies):
-        line = str(f) + ' <--->' + str(magnitudes_in_dbs[int(round(f / (sampling_freq/block_size)))]) + ' exactly:{} '.format(f/(sampling_freq/block_size)) + ' resources:{}'.format(frequency_resolution) + 'bin nr:{}'.format(index) + '\n'
-        text_file.write(line)
-        print(line)
-    text_file.close()
-    '''
-    return frequencies, magnitudes_in_dbs
-
-
-def import_config_settings(name):
-    try:
-        name = name.strip().lower()
-        if YAML_EXTENSION not in name:
-            filename = name + YAML_EXTENSION
-        else:
-            filename = name
-        filepath = os.path.join(CONFIG_DIR_NAME, filename)
-        return import_settings(filepath)
-    except Exception as e:
-        return None
-
-
-def import_sensor_settings(name):
-    try:
-        name = name.strip().lower()
-        if YAML_EXTENSION not in name:
-            filename = convert_sensor_name_to_file_name(name)
-        else:
-            filename = name
-        filepath = os.path.join(SENSOR_DIR_NAME, filename)
-        return import_settings(filepath)
-    except Exception as e:
-        return None
-
-
-def import_settings(filename):
-    try:
-        with open(filename, 'r') as stream:
-            settings_dict = ruamel_yaml.load(stream, Loader=ruamel_yaml.Loader)
-            stream.close()
-            return settings_dict
-    except Exception as e:
-        return None
-
-
-def export_settings(settings, filepath):
-    try:
-        with open(filepath, 'w') as stream:
-            ruamel_yaml.dump(settings, stream)
-    except Exception as e:
-        return False
-    return True
-
-
-def get_sensor_filepath(name):
-    try:
-        name = name.strip().lower()
-        if YAML_EXTENSION not in name:
-            filename = convert_sensor_name_to_file_name(name)
-        else:
-            filename = name
-        filepath = os.path.join(SENSOR_DIR_NAME, filename)
-        return filepath
-    except Exception as e:
-        return None
-
-
-def get_config_filepath(name):
-    try:
-        name = name.strip().lower()
-        if YAML_EXTENSION not in name:
-            filename = name + YAML_EXTENSION
-        else:
-            filename = name
-        filepath = os.path.join(CONFIG_DIR_NAME, filename)
-        return filepath
-    except Exception as e:
-        return None
-
-
-def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath('.'), relative_path)
-
-
-# Necessary if current working directory is not python-anser e.g qt-anser
-def get_relative_filepath(file):
-    cwd = os.getcwd()
-    if cwd is PACKAGE_NAME:
-        return file
-    else:
-        path = os.path.abspath(os.path.dirname(__file__))
-        terminator = path.index(PACKAGE_NAME)
-        test = path[:terminator]
-        return os.path.join(os.path.dirname(test), PACKAGE_NAME, file.strip())

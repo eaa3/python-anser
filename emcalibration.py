@@ -65,7 +65,7 @@ class EMCalibration:
             self.sensor.calibration[self.sensor.channel] = [float(i) for i in self.scalers]
             sensor_settings = utils.import_sensor_settings(self.sensor.name)
             sensor_settings['calibration'] = self.sensor.calibration
-            utils.export_settings(sensor_settings, utils.get_sensor_filepath(self.sensor.name))
+            utils.export_settings(sensor_settings, utils.find_sensor(self.sensor.name))
             print('Calibration Saved.\n')
         except Exception as e:
             print('Error Calibrating')
