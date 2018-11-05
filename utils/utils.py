@@ -50,14 +50,20 @@ def convert_channels_to_ports(channels):
     return ports
 
 
-#TODO: change this so it uses the get_calibration() function
-def get_working_channels(calibration):
+def get_calibrated_channels(calibration):
     channels = []
     for channel in calibration.keys():
         if calibration[channel] != [0]*8:
             if channel not in channels:
                 channels.append(channel)
     return channels
+
+
+def get_active_channel(dof, selected_port, primary_channels=[1, 3, 5, 7]):
+    if dof == 6:
+        return [selected_port * 2 - 1, selected_port * 2]
+    else:
+        return [primary_channels[selected_port-1]]
 
 
 '''----------------------------------------------------------------------------'''
@@ -177,12 +183,25 @@ def get_sensors():
         for file in sensorFiles:
             sensor_settings = import_sensor_settings(file)
             sensor = Sensor(sensor_settings)
-            channels = get_working_channels(sensor.calibration)
+            channels = get_calibrated_channels(sensor.calibration)
             sensor.ports = convert_channels_to_ports(channels)
             sensors.append(sensor)
     except Exception as e:
         print(str(e))
     return sensors
+
+
+def get_sensor(name):
+    try:
+        sensorFile = find_sensor(name)
+        sensor_settings = import_sensor_settings(sensorFile)
+        sensor = Sensor(sensor_settings)
+        channels = get_calibrated_channels(sensor.calibration)
+        sensor.ports = convert_channels_to_ports(channels)
+        return sensor
+    except Exception as e:
+        print(str(e))
+        return None
 
 
 '''----------------------------------------------------------------------------'''

@@ -19,8 +19,8 @@ def print_info():
 
 
 def print_settings(config):
-    print('Sensor channels: ', end='')
-    print(config['system']['channels'])
+    #print('Sensor channels: ', end='')
+    #print(config['system']['channels'])
 
     print('Transmitting frequencies: ', end='')
     print(config['filter']['freqs'])
@@ -81,13 +81,6 @@ def create_config(args):
     if hasattr(args, 'speed') and args.speed is not None:
         config['system']['speed'] = args.speed
 
-    if hasattr(args, 'ports') and args.ports is not None:
-        channels = []
-        for port in args.ports:
-           channel = config['system']['channels'][port-1]
-           channels.append(channel)
-        config['system']['channels'] = sorted(channels)
-
     if hasattr(args, 'grid') and args.grid is not None:
         config['system']['device_cal'] = args.grid
 
@@ -140,11 +133,10 @@ def create_config(args):
     return config
 
 
-
-def start_tracking(config, sensors):
+def start_tracking(sensors, config):
     anser = None
     try:
-        anser = EMTracker(config)
+        anser = EMTracker(sensors, config)
         anser.sensors = sensors
         anser.start_acquisition()
         #anser.flipflags = flip_option
@@ -257,17 +249,21 @@ if __name__ == '__main__':
                 print('\n')
         elif command == 'calibrate':
             try:
+                # Populate config file with user supplied arguments
                 config = create_config(args)
-                sensor_settings = utils.import_sensor_settings(args.sensorname)
-                if sensor_settings is None:
+                primary_channels = config['system']['primary_channels']
+
+                # Get the selected sensor and derive its active channels
+                sensor = utils.get_sensor(args.sensorname)
+                if sensor is None:
                     print('Sensor \'{}\' was not found'.format(args.sensorname))
                     sys.exit(1)
-                sensor = Sensor(sensor_settings)
-                #sensor.channel = utils.convert_port_num_to_channel_num(args.port, config['system']['channels'])
-                sensor.channel = config['system']['channels'][args.port - 1]
+                sensor.channel = utils.get_active_channel(sensor.dof, args.port, primary_channels)
+                print(sensor.channel)
 
+                # Initialise calibration with sensor and config file
                 calibration = EMCalibration(sensor, config)
-                for i in range(calibration.cal.numPoints):
+                for i in range(calibration.point_count):
                     print('Point %d' % (i + 1), '...')
                     input('')
                     calibration.next()
@@ -282,24 +278,31 @@ if __name__ == '__main__':
 
         elif command == 'track':
             try:
+                # Populate config file with user supplied arguments
                 config = create_config(args)
+                primary_channels = config['system']['primary_channels']
+
+                # Get the selected sensors
                 sensors = []
                 for name in args.sensornames:
-                    sensor_settings = utils.import_sensor_settings(name)
-                    if sensor_settings is None:
+                    sensor = utils.get_sensor(name)
+                    if sensor is None:
                         print('Sensor \'{}\' was not found'.format(name))
                         sys.exit(1)
-                    sensor = Sensor(sensor_settings)
                     sensors.append(sensor)
 
+                # Derive the active channels for each sensor
                 for sensor, port in zip(sensors, args.ports):
                     if port in range(1,9):
-                        #sensor.channel = utils.convert_port_num_to_channel_num(port)
-                        sensor.channel = config['system']['channels'][port-1]
+                        sensor.channel = utils.get_active_channel(sensor.dof, port, primary_channels)
                     else:
                         print('Invalid port please choose from (1-8) ')
                         sys.exit(1)
+
+                # Print Settings
                 print_settings(config)
-                start_tracking(config, sensors)
+
+                # Initialise tracking with sensors and config file
+                start_tracking(sensors,config)
             except Exception as e:
                 print(str(e))

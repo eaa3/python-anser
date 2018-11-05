@@ -50,7 +50,22 @@ def objectiveCalibrate(parameters, calfield, coilindex, model, calpoints):
     for i in range(numpoints):
         Hx[i], Hy[i], Hz[i] = model.getFieldSingle([x[i], y[i], z[i]], coilindex)
 
+    '''
+    # Accounting for Theta & Phi when calibrating a 6DOF Sensor
+    theta = 0
+    phi = 0
+    Bx = u0 * Hx * bscale
+    By = u0 * Hy * bscale
+    Bz = u0 * Hz * bscale
 
+    Bxsensor = Bx * np.sin(theta) * np.cos(phi)
+    Bysensor = By * np.sin(theta) * np.sin(phi)
+    Bzsensor = Bz * np.cos(theta)
+
+    fluxModel = Bxsensor + Bysensor + Bzsensor
+
+    deltaB = calfield - np.transpose(fluxModel)
+    '''
     Bz = u0 * Hz * bscale
 
     deltaB = calfield - np.transpose(Bz)
