@@ -86,31 +86,35 @@ class EMTracker:
             positions.append(position)
         self.positionNotifications.on_next(positions)
 
+    def reset_solver(self):
+        for channel in self.prevPositions.keys():
+            self.prevPositions[channel] = [0, 0, 0.2, 0, 0]
+
     def get_position(self, sensor, igtname=''):
         """Wrapper to include igt connection"""
-
+        channel = sensor.channel[0]
         # Set the solver to use the corresponding sensor calibration
-        self.solver.calibration = np.array(sensor.calibration[sensor.channel])
+        self.solver.calibration = np.array(sensor.calibration[channel])
 
-        if sensor.channel in self.prevPositions.keys():
-            self.solver.conditions = self.prevPositions[sensor.channel]
+        if channel in self.prevPositions.keys():
+            self.solver.conditions = self.prevPositions[channel]
         else:
             # Default initial conditionf for the solver
             self.solver.conditions = [0, 0, 0.2, 0, 0]
 
         # Resolve the position of the sensor indicated by sensorNo
         # Convert the resolved position to a 4x4 homogeneous transformation matrix
-        position = self._resolve_position(sensor.channel)
+        position = self._resolve_position(channel)
         positionmat = self.vec_2_mat_5dof(position)
 
         # Latest resolved position is saved as the initial condition for the next solver iteration
-        self.prevPositions[sensor.channel] = position
+        self.prevPositions[channel] = position
 
         # Send the resolved position over the system's OpenIGTLink connection
         # Optional sensor orientation correction (Theta + Pi) is applied before transmission
         if self.igtconn is not None:
             igtposition = position.copy()
-            if self.flipflags is None or sensor.channel not in self.flipflags:
+            if self.flipflags is None or channel not in self.flipflags:
                 igtposition[3] = igtposition[3] + pi
             igtmat = self.vec_2_mat_5dof(igtposition)
             self._igt_send_transform(igtmat, igtname)

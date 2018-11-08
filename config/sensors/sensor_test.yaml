@@ -9,5 +9,5 @@ calibration:
   8: [0, 0, 0, 0, 0, 0, 0, 0]
 channel: 1
 description: ''
-dof: '5'
+dof: 5
 name: test

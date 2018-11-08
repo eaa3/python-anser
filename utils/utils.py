@@ -159,7 +159,7 @@ def add_sensor(sensor_name, description, dof):
             sensor_settings = import_sensor_settings(sensor_name)
             sensor_settings['name'] = sensor_name
             sensor_settings['description'] = description
-            sensor_settings['dof'] = dof
+            sensor_settings['dof'] = int(dof)
             export_settings(sensor_settings, filepath.name)
             return True
         except Exception as e:
