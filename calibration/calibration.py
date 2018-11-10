@@ -4,7 +4,7 @@ from model.constants import u0, pi
 import numpy as np
 from scipy.optimize import least_squares
 from solver.objective import objectiveCalibrate, objectiveSolve
-from utils.settings import get_calibration
+from solver.objective import objectiveCalibrate6DOF
 
 
 class Calibration:
@@ -107,6 +107,51 @@ class Calibration:
         for i in range(numcoils):
 
             result = least_squares(objectiveCalibrate, estimate, args=(self.fieldData[i, :], i, self.model, calpoints),
+                                   jac='3-point', method='trf', ftol=2.3e-16,
+                                   xtol=1e-6, gtol=2.3e-16, verbose=0)
+
+            cals.append(result.x)
+
+        cals = np.array(cals)
+
+        # First column of calibration result is the detect z axis offset in the sensor height
+        self.zoffsets = cals[:, 0]
+        # Second column is a vector of scalers for the magnetic field produced by each transmission coil
+        self.cals = cals[:,1]
+
+        print(self.cals)
+
+        return self.cals
+
+    # TODO: Fix duplicate code
+    def run_calibration_6DOF(self, theta, phi):
+
+        # The calibration of the system is based on scaling the magnetic field from each individual transmitter coil,
+        # thus the number of calibration values to solve is equal to the number of transmitter coils.
+        numcoils = self.model.numcoils
+
+        # The orientation of the sensor during acquisition of the testpoint data. The sensor pointing towards the
+        # transmitter board signifies an elevation angle of Pi radians.
+        sensorOrientation = pi
+
+        # A flat list of the points used in the calibration procedure.
+        calpoints = [self.x, self.y, self.z]
+
+        # The initial estimate for the calibration. Two variables are varied in this process
+        # First entry is the sensor height offset (i.e z-axis). This needs to be part of the fitting procedure since
+        # the precise height of the sensor varies depending on the manufacture of the calibration probe. The offset
+        # value modifies the z-height of each testpoint during the fitting procedure
+        # Second entry is the scaling factor for the actual magnetic field. This initially begins at '1' and converges
+        # to a final value
+        estimate = np.array([0, 1])
+
+        # Storage for the calibration values
+        cals = []
+
+        # Iterate over each coil and calculate the scaling factors of each.
+        for i in range(numcoils):
+
+            result = least_squares(objectiveCalibrate6DOF, estimate, args=(theta, phi, self.fieldData[i, :], i, self.model, calpoints),
                                    jac='3-point', method='trf', ftol=2.3e-16,
                                    xtol=1e-6, gtol=2.3e-16, verbose=0)
 

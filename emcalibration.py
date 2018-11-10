@@ -60,8 +60,25 @@ class EMCalibration:
     def calibrate(self):
         if self.curr_point == self.point_count + 1:
             for index, calibrator in enumerate(self.calibrators):
-                self.scalers = calibrator.run_calibration()
+                if self.sensor.dof == 5:
+                    self.scalers = calibrator.run_calibration()
+                else: # 6DOF
+                    theta = self.config['calibration']['6DOF_theta']
+                    phi = self.config['calibration']['6DOF_phi']
+
+                    if index == 0:
+                        print('\n Sensor 1: ')
+                        print('theta: {} phi: {} \n'.format(theta[1], phi[1]))
+                        #self.scalers = calibrator.run_calibration_6DOF(theta[1], phi[1])
+                        self.scalers = calibrator.run_calibration()
+
+                    else:
+                        print('\n Sensor 2: ')
+                        print('theta: {} phi: {} \n'.format(theta[2], phi[2]))
+                        #self.scalers = calibrator.run_calibration_6DOF(theta[2], phi[2])
+                        self.scalers = calibrator.run_calibration()
                 self.sensor.calibration[self.sensor.channel[index]] = [float(i) for i in self.scalers]
+
 
             try:
                 sensor_settings = utils.import_sensor_settings(self.sensor.name)

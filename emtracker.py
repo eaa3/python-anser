@@ -1,7 +1,5 @@
 """ Class definition for Anser EMT system"""
 
-from utils.settings import get_settings, get_calibration
-from utils.utils import get_relative_filepath
 from model.model import MagneticModel
 from solver.solver import Solver
 from acquisition.daq import DAQ
@@ -139,23 +137,21 @@ class EMTracker:
             position = self._resolve_position(channel)
 
             # Latest resolved position is saved as the initial condition for the next solver iteration
-            self.prevPositions[channel] = position
+            self.prevPositions[channel] = position.copy()
+
+            if self.flipflags is None or channel not in self.flipflags:
+                position[3] = position[3] + pi
             positions.append(position)
 
         # TODO: fix 6dof calculation
         positionmat = self.combine_5dof_sensors(positions[0], positions[1])
-        #angles = self.rotationMatrixToEulerAngles(positionmat[:-1, :-1])
-        #position = positions[0][:3]
-        #position = np.append(position, np.array(angles))
+        #print('midposition {}'.format(mid_position))
 
         # Send the resolved position over the system's OpenIGTLink connection
         # Optional sensor orientation correction (Theta + Pi) is applied before transmission
         if self.igtconn is not None:
-            igtposition = positionmat.copy()
-            #if self.flipflags is None or sensor.channel not in self.flipflags:
-            #igtposition[3] = igtposition[3] + pi
-            #igtmat = self.vec_2_mat_5dof(igtposition)
-            self._igt_send_transform(igtposition, igtname)
+            igtmat = positionmat
+            self._igt_send_transform(igtmat, igtname)
 
         # Return the sensor position in both vector and 4x4 homogeneous transformation matrix.
         return positions[0], positionmat
@@ -187,9 +183,14 @@ class EMTracker:
         # Step 4: Get perpendicular axis
         vp = np.cross(vt, v3)
 
+        # Get the mid point
+        mid_point = ((sensor1 + sensor2) / 2)[:3]
+        mid_point = np.multiply(np.array(mid_point), 1000)
+
         # Step 5: Populate rotation matrix ([v3][vp][vt][Position])
-        positions = np.multiply(np.array(sensor1)[:3], 1000)
-        mat = np.column_stack((v3, vp, vt, positions))
+        #positions = np.multiply(np.array(sensor1)[:3], 1000)
+        #mid_point = np.multiply(np.array(mid_point), 1000)
+        mat = np.column_stack((v3, vp, vt, mid_point))
         mat = np.append(mat, np.array([[0, 0, 0, 1]]), axis=0)  # Apply padding to end of matrix
 
         return mat
