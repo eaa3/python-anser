@@ -39,12 +39,12 @@ solver:
   xtol: 1e-06
 system:
   channels: []
-  primary_channels: [1, 4, 5, 8]
+  primary_channels: [1, 3, 5, 7]
   device_cal: 7x7
   device_name: Dev1
   device_type: nidaq
-  flip_enable: true
-  flip_list: [5,6]
+  flip_enable: false
+  flip_list:
   igt: false
   igt_local: true
   igt_port: 18944
