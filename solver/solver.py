@@ -1,11 +1,14 @@
 import numpy as np
 from scipy.optimize import least_squares
 from solver.objective import objectiveSolve
+from model.constants import pi
+import datetime
+import os
 
 
 class Solver:
-    def __init__(self, calibration, model, solver_config):
-
+    def __init__(self, lookup_table, model, solver_config):
+        self.lookup_table = lookup_table
         # Solver settings
         self.jac = solver_config['jacobian']
         self.bounds = (solver_config['bounds_min'], solver_config['bounds_max'])
@@ -19,7 +22,7 @@ class Solver:
         self.modelObject = model
 
         # Matrix of calibration values
-        self.calibration = calibration
+        self.calibration = None
 
         # Initial conditions for the calibration routine
         self.calinit = [0, 1]
@@ -55,4 +58,33 @@ class Solver:
         else:
             exit('Unrecognised solving algorithm type; Levenburg-Marquardt (LM) and trust-region (TRF) are supported')
             result = 0
+        return result
+
+    def get_position(self, sensorName, magnitudes):
+        self.calibration, self.conditions = self.lookup_table[sensorName]
+        result = self.solveLeastSquares(magnitudes)
+        wrapresult = self._angle_wrap(result)
+        position = np.array(wrapresult.x)
+        self.lookup_table[sensorName] = (self.calibration, position)
+        positionmat = self.vec_2_mat_5dof(wrapresult.x)
+        return sensorName, positionmat
+
+    @staticmethod
+    def vec_2_mat_5dof(array):
+
+        mat = np.matrix([[np.cos(array[4]) * np.cos(array[3]), -np.sin(array[4]), np.cos(array[4]) * np.sin(array[3]),
+                          array[0] * 1000],
+                         [np.sin(array[4]) * np.cos(array[3]), np.cos(array[4]), np.sin(array[4]) * np.sin(array[3]),
+                          array[1] * 1000],
+                         [-np.sin(array[3]), 0, np.cos(array[3]), array[2] * 1000],
+                         [0, 0, 0, 1]])
+        return mat
+
+
+    @staticmethod
+    def _angle_wrap(result):
+        if result.x[4] > 2*pi:
+            result.x[4] = result.x[4] - 2 * pi
+        elif result.x[4] < -2*pi:
+            result.x[4] = result.x[4] + 2 * pi
         return result

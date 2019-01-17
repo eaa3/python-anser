@@ -11,9 +11,22 @@ from rx.subjects import Subject
 from rx.concurrency import NewThreadScheduler
 import platform
 import math
+import multiprocessing as mp
+from multiprocessing import *
+import select
+import os
+
+solver = None
+def create_solver(obj):
+    global solver
+    solver = obj
+
+def solver_run(sensorNo, magnitudes):
+    return solver.get_position(sensorNo, magnitudes)
 
 
 class EMTracker:
+
     """
     Class definition for Anser EMT system
     """
@@ -21,7 +34,6 @@ class EMTracker:
 
         # Define system magnetic model and solver with specific loaded configuration
         self.model = MagneticModel(config['model'])
-        self.solver = Solver(None, self.model, config['solver'])
 
         # Derive what channels should be active
         self.active_channels = []
@@ -29,6 +41,7 @@ class EMTracker:
         for sensor in self.sensors:
             self.active_channels.extend(sensor.channel)
             self.active_channels = sorted(self.active_channels)
+
         config['system']['channels'] = self.active_channels
 
         # Create a dictionary to store previous sensor positions
@@ -43,21 +56,43 @@ class EMTracker:
         self.data = np.matrix([])
         self.magnitudes = np.matrix([])
 
-        # Create local OpenIGTLink server
-        self.igtconn = None
-        if config['system']['igt'] is True:
-            self.igtconn = PyIGTLink(port=config['system']['igt_port'], localServer=config['system']['igt_local'])
-
         self.t = threading.Thread(target=self.run)
         self.t.daemon = True
         self.print_option = config['system']['print']
         self.sampleNotifications = Subject()
         self.positionNotifications = Subject()
         self.delay = config['system']['update_delay']
-        self.sensors = []
         self.device_cal = config['system']['device_cal']
         self.alive = True
         self.subscriptions = []
+
+        # Create a sensor Lookup Table with calibration and prevposition entries (indexed by sensor name)
+        # Initialise Solver with Lookup Table
+        # Create a pool of processes, each with its own Solver
+        self.lookup_table = Manager().dict()
+        solvr = Solver(self.lookup_table, self.model, config['solver'])
+        for index, sensor in enumerate(self.sensors):
+            self.lookup_table[sensor.name] = (sensor.calibration[sensor.channel[0]], [0, 0, 0.2, 0, 0])
+        self.pool = mp.Pool(mp.cpu_count(), initializer=create_solver, initargs=(solvr,))
+
+        # Create an IGT process
+        # Solver Processes can send sensor positions (for transmission) using the pipe
+        self.igt_connection, self.igt_connection2 = Pipe()
+        self.igtprocess = Process(target=self.igt_run, args=[self.igt_connection])
+
+    # Create an openigtlink connection
+    # Listen to solver processes for sensor positions
+    def igt_run(self, connection=None):
+        print('This is igt process: {}'.format(os.getpid()))
+        igtconn = PyIGTLink(port=18944, localServer=True)
+        while True:
+            read_sockets, write_sockets, error_sockets = select.select([connection], [], [], 0)
+            for nr, sock in enumerate(read_sockets):
+                if sock and igtconn is not None:
+                    matrix = sock.recv()
+                    matmsg = TransformMessage(matrix[1], device_name=matrix[0])
+                    igtconn.add_message_to_send_queue(matmsg)
+            time.sleep(0.001)
 
     def start_acquisition(self):
         """Start the DAQ acquisition background process"""
@@ -68,12 +103,14 @@ class EMTracker:
         self.daq.daqStop()
 
     def sample_update(self):
-        """Retrieve new samples from the buffer. Sample data for each channel is obtained and stored simultaneously.
-        Due to driver limitations, it is important that this function be called as often as possible on Linux and Mac
-        operation systems"""
-        self.data = self.daq.getData()
-        self.sampleNotifications.on_next(self.data)
+        data = self.daq.getData()
+        results = []
+        for sensorNo, sensor in enumerate(self.sensors):
+            magnitudes = self.filter.demodulateSignalRef(data, sensorNo + 1)
+            results.append(self.pool.apply_async(solver_run, args=(sensor.name, magnitudes,), callback=self.igt_connection2.send))
+        [result.wait() for result in results]
 
+    ''''
     def update_sensor_positions(self, samples=None):
         positions = []
         for sensor in self.sensors:
@@ -287,7 +324,7 @@ class EMTracker:
             self.igtconn = None
             return True
         return False
-
+    '''
     def add_sensor(self, sensor):
         self.sensors.append(sensor)
 
@@ -295,18 +332,11 @@ class EMTracker:
         self.t.start()
 
     def run(self):
-        if platform.system() == 'Darwin':
-            update_pos_thread = NewThreadScheduler()
-            self.subscriptions.append(self.sampleNotifications.sample(10, scheduler=update_pos_thread)
-                                      .subscribe(on_next=self.update_sensor_positions))
-            while self.alive:
-                self.sample_update()
-                time.sleep(self.delay)
-        else:
-            while self.alive:
-                self.sample_update()
-                self.update_sensor_positions()
-                time.sleep(self.delay)
+        self.igtprocess.start()
+        print('This is main thread: {}'.format(os.getpid()))
+        while self.alive:
+            self.sample_update()
+            time.sleep(self.delay)
 
     def stop(self):
         self.alive = False

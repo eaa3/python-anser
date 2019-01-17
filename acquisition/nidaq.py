@@ -62,7 +62,10 @@ class NIDAQ(Task):
                 self._newdata_event.clear()
                 return self._data.copy()
         elif platform.system() == 'Linux' or platform.system() == 'Darwin' or self.contSample is False:
-            self.ReadAnalogF64(self.data_len, 10.0, DAQmx_Val_GroupByChannel, self._data, self.data_len*self.channels.shape[0], byref(self.read), None)
+            #try:
+            self.ReadAnalogF64(self.data_len, 1.0, DAQmx_Val_GroupByChannel, self._data, self.data_len * self.channels.shape[0], byref(self.read), None)
+            #except Exception as e:
+            #   print('Change your update delay')
             return self._data.copy()
 
     def get_data_matrix(self, timeout=None):

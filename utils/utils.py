@@ -59,7 +59,7 @@ def get_calibrated_channels(calibration):
     return channels
 
 
-def get_active_channel(dof, selected_port, primary_channels=[1, 3, 5, 7]):
+def get_active_channel(dof, selected_port, primary_channels=[1, 3, 5, 7, 10, 11, 13, 15]):
     if dof == 6:
         return [selected_port * 2 - 1, selected_port * 2]
     else:
